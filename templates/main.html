@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Creativity Task</title>
+<style>
+  :root { --pad: 14px; }
+  body{ margin:0; padding:0; background:#f7f7f7; font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;}
+  .wrap{ max-width:1000px; margin:24px auto; padding:0 16px;}
+  .topbar{ display:flex; align-items:center; justify-content:space-between; }
+  .title{ font-size:22px; font-weight:600; }
+  .clock{ font-variant-numeric: tabular-nums; padding:8px 12px; background:#fff; border:1px solid #ddd; border-radius:8px;}
+  .panel{ background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px;}
+  .prompt{ font-size:18px; margin:0; }
+  .row{ display:flex; align-items:flex-start; gap:10px; margin-top:10px; }
+  .row input[type="text"]{ flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:8px; background:#fafafa; }
+  .btn{ padding:10px 12px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .feedback{ min-height:40px; flex:1; padding:10px 12px; border:1px solid #e6e6e6; background:#fcfcfc; border-radius:8px; }
+  .addbar{ margin-top:12px; display:flex; gap:10px; }
+  .nav{ display:flex; justify-content:space-between; margin-top:18px; }
+  .progress{ color:#666; font-size:14px; }
+  .hint{ color:#666; font-size:14px; margin-top:6px;}
+  .timeup{ color:#b00020; font-weight:600; margin-left:8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">Alternate Uses Task</div>
+      <div>
+        <span class="clock" id="timer">05:00</span>
+        <button class="btn" id="startTimer">Start</button>
+        <button class="btn" id="resetTimer">Reset</button>
+        <span class="timeup" id="timeUpMsg" style="display:none;">Time is up</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p class="prompt" id="prompt">Prompt will appear here</p>
+      <div id="answers"></div>
+
+      <div class="addbar">
+        <button class="btn" id="addAnswer">Add another answer</button>
+        <span class="hint">Every row needs an answer and feedback before you move on.</span>
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="prevBtn">Back</button>
+        <div class="progress" id="progress"></div>
+        <button class="btn" id="nextBtn" disabled>Next</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const QUESTIONS = [
+  { id: "paperclip", text: "Paperclip. Think of as many uses as you can." },
+  { id: "brick",     text: "Brick. Think of as many uses as you can." },
+  { id: "shoe",      text: "Shoe. Think of as many uses as you can." },
+  { id: "newspaper", text: "Newspaper. Think of as many uses as you can." },
+  { id: "tincan",    text: "Tin can. Think of as many uses as you can." }
+];
+
+const COMMON = {
+  paperclip: ["hold paper","bookmark","lock","pick","reset","sim","button","hair","hook","zipper","clean"],
+  brick: ["build","doorstop","paperweight","hold","press","step","weight"],
+  shoe: ["wear","store","plant","hammer","doorstop","paperweight"],
+  newspaper: ["read","clean","wrap","line","start fire","paper mache","swat","mask"],
+  tincan: ["store","pen holder","plant","cup","pencil","drum","string phone"]
+};
+
+const LS_KEY = "aut_state_v4";
+let state = loadState();
+
+let duration = 5 * 60;
+let timerId = null;
+let timeUp = false;
+
+const timerEl = document.getElementById("timer");
+const startBtn = document.getElementById("startTimer");
+const resetBtn = document.getElementById("resetTimer");
+const timeUpMsg = document.getElementById("timeUpMsg");
+
+startBtn.onclick = startTimer;
+resetBtn.onclick = () => { resetTimer(); unlockInputs(); };
+
+function startTimer(){
+  if (timerId) return;
+  timerId = setInterval(() => {
+    duration -= 1;
+    if (duration <= 0) {
+      clearInterval(timerId);
+      timerId = null;
+      duration = 0;
+      onTimeUp();
+    }
+    renderTime();
+  }, 1000);
+}
+function resetTimer(){
+  clearInterval(timerId);
+  timerId = null;
+  duration = 5*60;
+  timeUp = false;
+  timeUpMsg.style.display = "none";
+  renderTime();
+}
+function renderTime(){
+  const m = String(Math.floor(duration/60)).padStart(2,"0");
+  const s = String(duration%60).padStart(2,"0");
+  timerEl.textContent = `${m}:${s}`;
+}
+function onTimeUp(){
+  timeUp = true;
+  timeUpMsg.style.display = "inline";
+  lockInputs();
+  updateNextButton();
+}
+
+// DOM refs
+const answersWrap = document.getElementById("answers");
+const promptEl = document.getElementById("prompt");
+const progressEl = document.getElementById("progress");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const addBtn = document.getElementById("addAnswer");
+
+function loadState(){
+  const empty = { index: 0, data: {}, feedback: {} };
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : empty;
+  }catch(e){ return empty; }
+}
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+function currentId(){ return QUESTIONS[state.index].id; }
+function ensureArraysFor(id){
+  if (!state.data[id]) state.data[id] = [];
+  if (!state.feedback[id]) state.feedback[id] = [];
+  while (state.feedback[id].length < state.data[id].length) state.feedback[id].push(false);
+}
+
+function render(){
+  const q = QUESTIONS[state.index];
+  ensureArraysFor(q.id);
+
+  promptEl.textContent = q.text;
+  progressEl.textContent = `Question ${state.index+1} of ${QUESTIONS.length}`;
+
+  resetTimer();
+
+  answersWrap.innerHTML = "";
+  const arr = state.data[q.id];
+  if (arr.length === 0) {
+    arr.push("");
+    state.feedback[q.id].push(false);
+  }
+  arr.forEach((val, i) => addAnswerRow(i, val));
+
+  prevBtn.disabled = state.index === 0;
+  updateNextButton();
+  saveState();
+}
+
+function addAnswerRow(i, value=""){
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = `Answer ${i+1}`;
+  input.value = value;
+  input.disabled = timeUp;
+  input.oninput = () => {
+    const id = currentId();
+    state.data[id][i] = input.value;
+    // if cleared, also clear feedback flag
+    const t = (input.value || "").trim();
+    if (t.length === 0) state.feedback[id][i] = false;
+    saveState();
+    updateNextButton();
+  };
+
+  const fbBtn = document.createElement("button");
+  fbBtn.className = "btn";
+  fbBtn.textContent = "Get Feedback";
+
+  const fb = document.createElement("div");
+  fb.className = "feedback";
+
+  fbBtn.onclick = () => {
+    const id = currentId();
+    const msg = feedbackFor(id, input.value, i);
+    fb.textContent = msg;
+    const t = (input.value || "").trim();
+    state.feedback[id][i] = t.length > 0;
+    saveState();
+    updateNextButton();
+  };
+
+  row.appendChild(input);
+  row.appendChild(fbBtn);
+  row.appendChild(fb);
+  answersWrap.appendChild(row);
+}
+
+addBtn.onclick = () => {
+  if (timeUp) return;
+  const id = currentId();
+  ensureArraysFor(id);
+  state.data[id].push("");
+  state.feedback[id].push(false);
+  saveState();
+  addAnswerRow(state.data[id].length - 1, "");
+  updateNextButton(); // new empty row blocks moving on
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+};
+
+function feedbackFor(qid, text, idx){
+  const t = (text || "").trim();
+  if (!t) return "Please write your idea.";
+  if (t.length < 4) return "Add a little more detail.";
+
+  const norm = s => s.toLowerCase().replace(/\s+/g," ").trim();
+  const thisQ = state.data[qid].map(norm);
+  const here = norm(t);
+  for (let i=0;i<thisQ.length;i++){
+    if (i === idx) continue;
+    if (thisQ[i] === here) return "Try something different. This looks like a repeat.";
+  }
+
+  const list = COMMON[qid] || [];
+  const low = here.toLowerCase();
+  const isCommon = list.some(w => low.includes(w));
+  let score = 3;
+  let note = "";
+  if (isCommon){ score = 2; note = "common idea"; }
+  else { score = 4; note = "less common idea"; }
+
+  const hasDetail = /\b(using|with|for|as|by)\b/i.test(t) || /\d/.test(t) || t.split(" ").length >= 5;
+  if (hasDetail) score += 1;
+
+  const stars = "★★★★★".slice(0, Math.min(5, score));
+  return `${stars}  ${note}. Keep going.`;
+}
+
+// new strict rule:
+// move on only when every row has a non empty answer and feedback
+function canMoveOn(){
+  const id = currentId();
+  ensureArraysFor(id);
+  const answers = state.data[id];
+  const fbArr = state.feedback[id];
+  if (answers.length === 0) return false;
+
+  for (let i = 0; i < answers.length; i++){
+    const t = (answers[i] || "").trim();
+    if (t.length === 0) return false;      // empty row blocks
+    if (fbArr[i] !== true) return false;   // missing feedback blocks
+  }
+  return true;
+}
+
+function updateNextButton(){
+  const allow = canMoveOn();
+  const last = state.index === QUESTIONS.length - 1;
+  nextBtn.disabled = !allow || last;
+}
+
+function lockInputs(){
+  timeUp = true;
+  const inputs = answersWrap.querySelectorAll('input[type="text"]');
+  inputs.forEach(inp => inp.disabled = true);
+  addBtn.disabled = true;
+}
+function unlockInputs(){
+  timeUp = false;
+  const inputs = answersWrap.querySelectorAll('input[type="text"]');
+  inputs.forEach(inp => inp.disabled = false);
+  addBtn.disabled = false;
+}
+
+// nav
+prevBtn.onclick = () => {
+  state.index = Math.max(0, state.index - 1);
+  saveState();
+  render();
+};
+nextBtn.onclick = () => {
+  if (nextBtn.disabled) return;
+  state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
+  saveState();
+  render();
+};
+
+// first paint
+render();
+</script>
+</body>
+</html>

@@ -117,35 +117,6 @@
  * E = Exp 4 (Negative)
  */
 
-const FEEDBACK_LIBRARY = {
-  // Group B is handled via API now, removing templates.
-  C: { // Informative
-    messages: [
-      "Try imagining the object in a completely different context — like outer space or underwater.",
-      "Combine two unrelated functions to create a surprising new use.",
-      "Think about how someone from a different culture or time period might use this object.",
-      "What if this object was 100 times larger? How would that change its use?",
-      "Deconstruct the object. Can the parts be used individually?"
-    ]
-  },
-  D: { // Positive
-    messages: [
-      "Your ideas show promise — keep exploring them further! 🌟",
-      "Interesting direction — you’re engaging creatively with the task! 👍",
-      "You’re generating ideas that could lead to something unique. Keep going! 🚀",
-      "Great flow of thought! You are doing well. 😊"
-    ]
-  },
-  E: { // Negative / Challenge
-    messages: [
-      "This idea follows a familiar path — try pushing beyond the obvious.",
-      "Consider how you might add a twist or new perspective to this response.",
-      "Let’s challenge ourselves to go beyond common uses — what else could it do?",
-      "That is a very standard use. Try to break the pattern."
-    ]
-  }
-};
-
 const QUESTIONS = [
   { id: "paperclip", text: "Paperclip. Think of as many uses as you can." },
   { id: "brick",     text: "Brick. Think of as many uses as you can." },
@@ -192,6 +163,9 @@ function handleLogin() {
   }
 
   state = loadState() || state;
+  if (!state.feedbackGiven) state.feedbackGiven = {};
+  if (!state.feedbackText) state.feedbackText = {};
+  if (!state.sent) state.sent = {};
   if (state.userId !== input) {
     state = { userId: input, group: groupChar, index: 0, data: {}, feedbackGiven: {}, feedbackText: {}, sent: {} };
     saveState();
@@ -471,9 +445,23 @@ function addAnswerRow(i, value=""){
       }
     } 
     
-    // LOGIC FOR GROUPS C, D, E (Standard Local Logic)
+    // LOGIC FOR GROUPS C, D, E (Backend via Gemini)
     else {
-        const msg = generateLocalFeedback(state.group, txt);
+      fbWrap.textContent = "Loading...";
+      fbWrap.style.color = "#444";
+      try {
+        const response = await fetch("/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: state.userId,
+            question: QUESTIONS[state.index].text,
+            answer: txt
+          })
+        });
+        if (!response.ok) throw new Error("Server error");
+        const data = await response.json();
+        const msg = data.feedback || JSON.stringify(data);
         fbWrap.textContent = msg;
         fbWrap.style.color = "#444";
         state.feedbackGiven[currentId()][i] = true;
@@ -482,9 +470,20 @@ function addAnswerRow(i, value=""){
           feedbackText: msg,
           receivedAt: new Date().toISOString()
         });
+      } catch (err) {
+        console.error(err);
+        fbWrap.textContent = "Error: Could not fetch feedback.";
+        fbWrap.style.color = "#b00020";
+        updateLog(logId, {
+          feedbackText: "Error: Could not fetch feedback.",
+          receivedAt: new Date().toISOString(),
+          error: true
+        });
+      } finally {
         fbBtn.disabled = false;
         saveState();
         updateNextButton();
+      }
     }
   };
 
@@ -526,19 +525,6 @@ async function flushUnsynced() {
     state.sent[id][i] = true;
   }
   saveState();
-}
-
-// --- Local Feedback (C, D, E) ---
-function generateLocalFeedback(group, text) {
-  let library = [];
-  if (group === 'C') library = FEEDBACK_LIBRARY.C.messages;
-  if (group === 'D') library = FEEDBACK_LIBRARY.D.messages;
-  if (group === 'E') library = FEEDBACK_LIBRARY.E.messages;
-  
-  if (library.length > 0) {
-    return library[Math.floor(Math.random() * library.length)];
-  }
-  return "Feedback processed.";
 }
 
 // --- Validation Logic ---

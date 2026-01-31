@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Creativity Study</title>
+<style>
+  :root { --pad: 14px; }
+  body{ margin:0; padding:0; background:#f7f7f7; font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;}
+  .wrap{ max-width:1000px; margin:24px auto; padding:0 16px;}
+  .topbar{ display:flex; align-items:center; justify-content:space-between; }
+  .title{ font-size:22px; font-weight:600; }
+  .panel{ background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px;}
+  .btn{ padding:10px 12px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; text-decoration:none; text-align:center; color:#111; display:inline-block; }
+  .btn:active{ transform:translateY(1px); }
+  .hint{ color:#666; font-size:14px; margin-top:6px;}
+  .cards{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:12px;}
+  .card{ border:1px solid #e3e3e3; border-radius:12px; padding:16px; background:#fff; display:flex; flex-direction:column; gap:8px; min-height:140px;}
+  .card-title{ font-size:18px; font-weight:600; margin:0; }
+  .card-desc{ margin:0; color:#555; }
+  .card-actions{ margin-top:auto; display:flex; gap:8px; }
+  .card .btn{ width:100%; }
+  @media (max-width: 800px){
+    .cards{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">Creativity Study</div>
+      <div class="hint">Choose a section to begin.</div>
+    </div>
+
+    <div class="panel">
+      <div class="cards">
+        <div class="card">
+          <p class="card-title">Pre-survey</p>
+          <p class="card-desc">Quick background questions before the task.</p>
+          <div class="card-actions">
+            <a class="btn" href="https://unt.az1.qualtrics.com/jfe/form/SV_3Len7L1iewEBAKa"  target="_blank">Start pre-survey</a>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card-title">Creativity task</p>
+          <p class="card-desc">Alternate uses task with timed prompts.</p>
+          <div class="card-actions">
+            <a class="btn" href="templates/task.html"  target="_blank">Start task</a>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card-title">Post-survey</p>
+          <p class="card-desc">Reflection questions after finishing the task.</p>
+          <div class="card-actions">
+    
+            <a class="btn" href="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU "  target="_blank">Start post-survey</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

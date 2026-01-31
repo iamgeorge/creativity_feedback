@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Creativity Task Experiment (Connected)</title>
+<style>
+  :root { --pad: 14px; --primary: #2563eb; }
+  body { margin:0; padding:0; background:#f7f7f7; font:16px/1.45 system-ui, -apple-system, sans-serif; }
+  .wrap { max-width:1000px; margin:24px auto; padding:0 16px; }
+  
+  /* --- Login Screen Styles --- */
+  #loginScreen {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: #fff; z-index: 999; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .login-box {
+    width: 300px; padding: 30px; border: 1px solid #ddd;
+    border-radius: 12px; background: #fafafa; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .login-box h2 { margin-top:0; }
+  .login-box input {
+    width: 90%; padding: 10px; margin-bottom: 15px;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+  }
+  
+  /* --- Main App Styles --- */
+  .topbar { display:flex; align-items:center; justify-content:space-between; }
+  .title { font-size:22px; font-weight:600; }
+  .clock { font-variant-numeric: tabular-nums; padding:8px 12px; background:#fff; border:1px solid #ddd; border-radius:8px; }
+  .panel { background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px; }
+  .prompt { font-size:18px; margin:0; font-weight: 500; color: #333; }
+  
+  .row { display:flex; align-items:flex-start; gap:10px; margin-top:10px; }
+  .row input[type="text"] { flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:8px; background:#fafafa; font-size:15px; }
+  
+  .btn { padding:10px 16px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; font-weight: 500; transition: all 0.2s; }
+  .btn:hover { background: #f0f0f0; }
+  .btn:active { transform:translateY(1px); }
+  .btn:disabled { opacity:0.5; cursor:not-allowed; }
+  
+  /* Feedback Styling */
+  .feedback { 
+    flex:1; min-height:42px; padding:10px 12px; 
+    border:1px solid #e6e6e6; background:#fcfcfc; 
+    border-radius:8px; font-size: 14px; color: #444;
+    display: flex; align-items: center;
+  }
+
+  /* --- LAYOUT VARIATIONS --- */
+  
+  /* Layout 1: Control Group (A) - Hides feedback elements completely */
+  body.group-control .fb-btn-wrapper,
+  body.group-control .feedback-wrapper { display: none !important; }
+  body.group-control .row input[type="text"] { flex: 1 1 100%; }
+
+  /* Layout 2: Experimental Groups (B, C, D, E) - Standard layout */
+  body.group-exp .row input[type="text"] { flex: 2; }
+  body.group-exp .fb-btn-wrapper { flex: 0 0 auto; }
+  body.group-exp .feedback-wrapper { flex: 2; }
+
+  .addbar { margin-top:16px; display:flex; gap:10px; align-items: center; }
+  .nav { display:flex; justify-content:space-between; margin-top:24px; border-top: 1px solid #eee; padding-top: 16px;}
+  .progress { color:#666; font-size:14px; align-self: center; }
+  .hint { color:#666; font-size:13px; }
+  .timeup { color:#b00020; font-weight:600; margin-left:8px; }
+  .error-msg { color: #d32f2f; margin-top: 10px; font-size: 14px; display: none;}
+</style>
+</head>
+<body>
+
+  <div id="loginScreen">
+    <div class="login-box">
+      <h2>Welcome</h2>
+      <p>Please enter your Participant ID to begin.</p>
+      <input type="text" id="userIdInput" placeholder="e.g., A1, B12..." autofocus>
+      <button class="btn" id="loginBtn" style="background:var(--primary); color:#fff; width:100%">Enter</button>
+      <div id="loginError" class="error-msg">Invalid ID format.</div>
+    </div>
+  </div>
+
+  <div class="wrap" id="mainApp" style="display:none;">
+    <div class="topbar">
+      <div class="title">Alternate Uses Task</div>
+      <div>
+        <span class="clock" id="timer">05:00</span>
+        <span class="timeup" id="timeUpMsg" style="display:none;">Time is up</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="prompt" id="prompt">Prompt loading...</h3>
+      <div id="answers"></div>
+
+      <div class="addbar">
+        <button class="btn" id="addAnswer">Add another answer</button>
+        <span class="hint" id="validationHint"></span>
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="prevBtn">Back</button>
+        <div class="progress" id="progress"></div>
+        <button class="btn" id="nextBtn">Next Task</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/** * CONFIGURATION 
+ * Groups: 
+ * A = Control (No feedback)
+ * B = Exp 1 (Backend Score) -> NOW CONNECTED TO LOCALHOST:5555
+ * C = Exp 2 (Informative)
+ * D = Exp 3 (Positive)
+ * E = Exp 4 (Negative)
+ */
+
+const FEEDBACK_LIBRARY = {
+  // Group B is handled via API now, removing templates.
+  C: { // Informative
+    messages: [
+      "Try imagining the object in a completely different context — like outer space or underwater.",
+      "Combine two unrelated functions to create a surprising new use.",
+      "Think about how someone from a different culture or time period might use this object.",
+      "What if this object was 100 times larger? How would that change its use?",
+      "Deconstruct the object. Can the parts be used individually?"
+    ]
+  },
+  D: { // Positive
+    messages: [
+      "Your ideas show promise — keep exploring them further! 🌟",
+      "Interesting direction — you’re engaging creatively with the task! 👍",
+      "You’re generating ideas that could lead to something unique. Keep going! 🚀",
+      "Great flow of thought! You are doing well. 😊"
+    ]
+  },
+  E: { // Negative / Challenge
+    messages: [
+      "This idea follows a familiar path — try pushing beyond the obvious.",
+      "Consider how you might add a twist or new perspective to this response.",
+      "Let’s challenge ourselves to go beyond common uses — what else could it do?",
+      "That is a very standard use. Try to break the pattern."
+    ]
+  }
+};
+
+const QUESTIONS = [
+  { id: "paperclip", text: "Paperclip. Think of as many uses as you can." },
+  { id: "brick",     text: "Brick. Think of as many uses as you can." },
+  { id: "shoe",      text: "Shoe. Think of as many uses as you can." },
+  { id: "newspaper", text: "Newspaper. Think of as many uses as you can." },
+  { id: "tincan",    text: "Tin can. Think of as many uses as you can." }
+];
+
+const LS_KEY = "aut_exp_state_v2_api";
+const LS_LOG_KEY = "aut_exp_log_v1";
+let state = {
+  userId: null,
+  group: null, // 'A', 'B', 'C', 'D', 'E'
+  index: 0,
+  data: {},
+  feedbackGiven: {},
+  feedbackText: {},
+  sent: {}
+};
+let interactionLog = loadLog() || [];
+
+// --- Login & Group Logic ---
+
+const loginScreen = document.getElementById("loginScreen");
+const userIdInput = document.getElementById("userIdInput");
+const loginBtn = document.getElementById("loginBtn");
+const loginError = document.getElementById("loginError");
+const mainApp = document.getElementById("mainApp");
+
+loginBtn.onclick = handleLogin;
+userIdInput.addEventListener("keypress", (e) => { if(e.key === 'Enter') handleLogin(); });
+
+function handleLogin() {
+  const input = userIdInput.value.trim().toUpperCase();
+  if (!input || input.length < 2) {
+    showError("Please enter a valid ID (e.g., A101).");
+    return;
+  }
+  
+  const groupChar = input.charAt(0);
+  if (!['A','B','C','D','E'].includes(groupChar)) {
+    showError("ID must start with A, B, C, D, or E.");
+    return;
+  }
+
+  state = loadState() || state;
+  if (state.userId !== input) {
+    state = { userId: input, group: groupChar, index: 0, data: {}, feedbackGiven: {}, feedbackText: {}, sent: {} };
+    saveState();
+  }
+
+  applyLayout(state.group);
+  loginScreen.style.display = "none";
+  mainApp.style.display = "block";
+  initApp();
+}
+
+function showError(msg) {
+  loginError.textContent = msg;
+  loginError.style.display = "block";
+}
+
+function applyLayout(group) {
+  document.body.className = ""; 
+  if (group === 'A') {
+    document.body.classList.add('group-control');
+    document.getElementById('validationHint').textContent = "Please fill in all answers before moving on.";
+  } else {
+    document.body.classList.add('group-exp');
+    document.getElementById('validationHint').textContent = "Every row needs an answer and feedback before you move on.";
+  }
+}
+
+// --- App Logic ---
+
+let duration = 5 * 60;
+let timerId = null;
+let timeUp = false;
+
+// DOM Refs
+const timerEl = document.getElementById("timer");
+const timeUpMsg = document.getElementById("timeUpMsg");
+const answersWrap = document.getElementById("answers");
+const promptEl = document.getElementById("prompt");
+const progressEl = document.getElementById("progress");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const addBtn = document.getElementById("addAnswer");
+
+function initApp() {
+  render();
+  startTimer();
+}
+
+addBtn.onclick = async () => {
+  if (timeUp) return;
+  await flushUnsynced();
+  const id = currentId();
+  ensureArraysFor(id);
+  state.data[id].push("");
+  state.feedbackGiven[id].push(false);
+  state.feedbackText[id].push("");
+  state.sent[id].push(false);
+  saveState();
+  addAnswerRow(state.data[id].length - 1, "");
+  updateNextButton();
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+};
+
+function startTimer(){
+  if (timerId) return;
+  timerId = setInterval(() => {
+    duration -= 1;
+    if (duration <= 0) {
+      clearInterval(timerId);
+      duration = 0;
+      onTimeUp();
+    }
+    renderTime();
+  }, 1000);
+}
+
+function renderTime(){
+  const m = String(Math.floor(duration/60)).padStart(2,"0");
+  const s = String(duration%60).padStart(2,"0");
+  timerEl.textContent = `${m}:${s}`;
+}
+
+function onTimeUp(){
+  timeUp = true;
+  timeUpMsg.style.display = "inline";
+  lockInputs();
+  updateNextButton();
+}
+
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){ return null; }
+}
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+function loadLog(){
+  try { return JSON.parse(localStorage.getItem(LS_LOG_KEY)); } catch(e){ return null; }
+}
+function saveLog(){
+  localStorage.setItem(LS_LOG_KEY, JSON.stringify(interactionLog));
+}
+function logEntry(base){
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+    userId: state.userId,
+    group: state.group,
+    questionId: currentId(),
+    questionText: QUESTIONS[state.index].text,
+    ...base
+  };
+  interactionLog.push(entry);
+  saveLog();
+  return entry.id;
+}
+function updateLog(id, patch){
+  const idx = interactionLog.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  interactionLog[idx] = { ...interactionLog[idx], ...patch };
+  saveLog();
+}
+
+function currentId(){ return QUESTIONS[state.index].id; }
+
+function ensureArraysFor(id){
+  if (!state.data[id]) state.data[id] = [];
+  if (!state.feedbackGiven[id]) state.feedbackGiven[id] = [];
+  if (!state.feedbackText[id]) state.feedbackText[id] = [];
+  if (!state.sent[id]) state.sent[id] = [];
+  while (state.feedbackGiven[id].length < state.data[id].length) {
+    state.feedbackGiven[id].push(false);
+  }
+  while (state.feedbackText[id].length < state.data[id].length) {
+    state.feedbackText[id].push("");
+  }
+  while (state.sent[id].length < state.data[id].length) {
+    state.sent[id].push(false);
+  }
+}
+
+function render(){
+  const q = QUESTIONS[state.index];
+  ensureArraysFor(q.id);
+
+  promptEl.textContent = q.text;
+  progressEl.textContent = `Task ${state.index+1} of ${QUESTIONS.length}`;
+
+  answersWrap.innerHTML = "";
+  const arr = state.data[q.id];
+  if (arr.length === 0) {
+    arr.push("");
+    state.feedbackGiven[q.id].push(false);
+    state.feedbackText[q.id].push("");
+    state.sent[q.id].push(false);
+  }
+  arr.forEach((val, i) => addAnswerRow(i, val));
+
+  prevBtn.disabled = state.index === 0;
+  updateNextButton();
+  saveState();
+}
+
+function addAnswerRow(i, value=""){
+  const row = document.createElement("div");
+  row.className = "row";
+
+  // 1. Input Field
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = `Idea ${i+1}`;
+  input.value = value;
+  input.disabled = timeUp;
+  input.oninput = () => {
+    const id = currentId();
+    state.data[id][i] = input.value;
+    state.sent[id][i] = false;
+    if (state.group !== 'A') {
+      state.feedbackGiven[id][i] = false; 
+      state.feedbackText[id][i] = "";
+      const fbBox = row.querySelector('.feedback');
+      if(fbBox) fbBox.textContent = "";
+    }
+    saveState();
+    updateNextButton();
+  };
+
+  row.appendChild(input);
+
+  // 2. Feedback Button & Box
+  const btnWrap = document.createElement("div");
+  btnWrap.className = "fb-btn-wrapper";
+  
+  const fbBtn = document.createElement("button");
+  fbBtn.className = "btn";
+  fbBtn.textContent = "Get Feedback";
+  
+  const fbWrap = document.createElement("div");
+  fbWrap.className = "feedback-wrapper feedback"; 
+
+  // Check if previously given
+  if (state.feedbackGiven[currentId()][i] === true) {
+     fbWrap.textContent = "(Feedback received)";
+     fbWrap.style.color = "#888";
+  }
+
+  // --- BUTTON CLICK HANDLER (UPDATED FOR BACKEND) ---
+  fbBtn.onclick = async () => {
+    const txt = input.value.trim();
+    if (!txt) { alert("Please write an idea first."); return; }
+
+    fbBtn.disabled = true;
+    const pressedAt = new Date().toISOString();
+    const logId = logEntry({
+      event: "feedback_pressed",
+      answerIndex: i,
+      answerText: txt,
+      pressedAt
+    });
+
+    // LOGIC FOR GROUP B: FETCH FROM BACKEND
+    if (state.group === 'B') {
+      fbWrap.textContent = "Scoring..."; // Loading state
+      
+      try {
+        const response = await fetch('http://localhost:5555/score', {
+    method: 'POST',
+    mode: 'cors', // Explicitly tell the browser to use CORS
+    headers: { 
+      'Content-Type': 'text/plain' // Keep this to avoid preflight if possible
+    }, 
+    body: JSON.stringify({ item: currentId(), answer: txt })
+  });
+
+        if (!response.ok) throw new Error("Server error");
+
+        const data = await response.json();
+        
+        // Handle response. Depending on your backend, 
+        // the score/feedback might be in a different key.
+        // Assuming data is: { "feedback": "...", "score": ... } or similar.
+        // If data IS the string, use data directly.
+        // Below I check for common keys or fallback to JSON string.
+        let displayMsg = "";
+        
+        if (typeof data === 'string') {
+            displayMsg = data;
+        } else if (data.feedback) {
+            displayMsg = data.feedback;
+        } else if (data.score) {
+            displayMsg = `Score: ${data.score}`;
+        } else {
+            // Fallback if structure is unknown
+            displayMsg = JSON.stringify(data); 
+        }
+
+        fbWrap.textContent = displayMsg;
+        fbWrap.style.color = "#444";
+        state.feedbackGiven[currentId()][i] = true;
+        state.feedbackText[currentId()][i] = displayMsg;
+        updateLog(logId, {
+          feedbackText: displayMsg,
+          receivedAt: new Date().toISOString()
+        });
+
+      } catch (err) {
+        console.error(err);
+        fbWrap.textContent = "Error: Could not connect to scoring server.";
+        fbWrap.style.color = "#b00020";
+        updateLog(logId, {
+          feedbackText: "Error: Could not connect to scoring server.",
+          receivedAt: new Date().toISOString(),
+          error: true
+        });
+      } finally {
+        fbBtn.disabled = false;
+        saveState();
+        updateNextButton();
+      }
+    } 
+    
+    // LOGIC FOR GROUPS C, D, E (Standard Local Logic)
+    else {
+        const msg = generateLocalFeedback(state.group, txt);
+        fbWrap.textContent = msg;
+        fbWrap.style.color = "#444";
+        state.feedbackGiven[currentId()][i] = true;
+        state.feedbackText[currentId()][i] = msg;
+        updateLog(logId, {
+          feedbackText: msg,
+          receivedAt: new Date().toISOString()
+        });
+        fbBtn.disabled = false;
+        saveState();
+        updateNextButton();
+    }
+  };
+
+  btnWrap.appendChild(fbBtn);
+  row.appendChild(btnWrap);
+  row.appendChild(fbWrap);
+
+  answersWrap.appendChild(row);
+}
+
+async function sendEntry(questionId, questionText, answerText, feedbackText) {
+  try {
+    await fetch("/store", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: state.userId,
+        time: new Date().toISOString(),
+        question: questionText,
+        answer: answerText,
+        feedback: feedbackText || null
+      })
+    });
+  } catch (err) {
+    console.error("Failed to store entry", err);
+  }
+}
+
+async function flushUnsynced() {
+  const q = QUESTIONS[state.index];
+  const id = q.id;
+  ensureArraysFor(id);
+  for (let i = 0; i < state.data[id].length; i++) {
+    const answerText = (state.data[id][i] || "").trim();
+    if (!answerText) continue;
+    if (state.sent[id][i]) continue;
+    const feedbackText = state.group === "A" ? null : state.feedbackText[id][i];
+    await sendEntry(id, q.text, answerText, feedbackText);
+    state.sent[id][i] = true;
+  }
+  saveState();
+}
+
+// --- Local Feedback (C, D, E) ---
+function generateLocalFeedback(group, text) {
+  let library = [];
+  if (group === 'C') library = FEEDBACK_LIBRARY.C.messages;
+  if (group === 'D') library = FEEDBACK_LIBRARY.D.messages;
+  if (group === 'E') library = FEEDBACK_LIBRARY.E.messages;
+  
+  if (library.length > 0) {
+    return library[Math.floor(Math.random() * library.length)];
+  }
+  return "Feedback processed.";
+}
+
+// --- Validation Logic ---
+function canMoveOn(){
+  const id = currentId();
+  ensureArraysFor(id);
+  const answers = state.data[id];
+  const fbFlags = state.feedbackGiven[id];
+  
+  if (answers.length === 0) return false;
+
+  for (let i = 0; i < answers.length; i++){
+    const t = (answers[i] || "").trim();
+    if (t.length === 0) return false; 
+    if (state.group !== 'A' && fbFlags[i] !== true) return false;
+  }
+  return true;
+}
+
+function updateNextButton(){
+  const last = state.index === QUESTIONS.length - 1;
+  nextBtn.disabled = false;
+  nextBtn.textContent = last ? "Finish" : "Next Task";
+}
+
+function lockInputs(){
+  const inputs = answersWrap.querySelectorAll('input[type="text"]');
+  inputs.forEach(inp => inp.disabled = true);
+  addBtn.disabled = true;
+  nextBtn.disabled = false; 
+}
+
+// Nav
+prevBtn.onclick = () => {
+  state.index = Math.max(0, state.index - 1);
+  saveState();
+  render();
+};
+nextBtn.onclick = async () => {
+  if (nextBtn.disabled) return;
+  if (state.index === QUESTIONS.length - 1) {
+    const ok = window.confirm("Are you sure to finish");
+    if (!ok) return;
+  }
+  await flushUnsynced();
+  state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
+  saveState();
+  render();
+};
+
+</script>
+</body>
+</html>

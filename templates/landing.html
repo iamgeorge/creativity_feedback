@@ -20,8 +20,24 @@
   .card-desc{ margin:0; color:#555; }
   .card-actions{ margin-top:auto; display:flex; gap:8px; }
   .card .btn{ width:100%; }
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal{ background:#fff; width:min(720px, 96vw); max-height:86vh; border-radius:12px; border:1px solid #e3e3e3; display:flex; flex-direction:column; }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee; }
+  .modal-title{ font-size:18px; font-weight:700; margin:0; }
+  .modal-close{ border:1px solid #ccc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
+  .modal-body{ padding:14px 16px; overflow:auto; }
+  .modal-footer{ padding:12px 16px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end; }
+  .modal .btn[disabled]{ opacity:0.5; cursor:not-allowed; }
+  .section-title{ font-size:18px; font-weight:700; margin:0 0 8px; }
+  .section-subtitle{ font-size:16px; font-weight:600; margin:16px 0 8px; }
+  .info-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px 16px; }
+  .info-item{ background:#fafafa; border:1px solid #eee; border-radius:10px; padding:10px 12px; }
+  .journey{ display:flex; flex-direction:column; gap:6px; }
+  .reminders{ margin:8px 0 0 18px; color:#333; }
+  .contact{ margin:6px 0 0; }
   @media (max-width: 800px){
     .cards{ grid-template-columns:1fr; }
+    .info-grid{ grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -38,7 +54,7 @@
           <p class="card-title">Pre-survey</p>
           <p class="card-desc">Quick background questions before the task.</p>
           <div class="card-actions">
-            <a class="btn" href="https://unt.az1.qualtrics.com/jfe/form/SV_3Len7L1iewEBAKa"  target="_blank">Start pre-survey</a>
+            <a class="btn" href="#" id="preSurveyStart" data-link="https://unt.az1.qualtrics.com/jfe/form/SV_3Len7L1iewEBAKa">Start pre-survey</a>
           </div>
         </div>
         <div class="card">
@@ -53,11 +69,145 @@
           <p class="card-desc">Reflection questions after finishing the task.</p>
           <div class="card-actions">
     
-            <a class="btn" href="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU "  target="_blank">Start post-survey</a>
+            <a class="btn" href="#" id="postSurveyStart" data-link="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU">Start post-survey</a>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="panel">
+      <p class="section-title">📋 GENERAL INFORMATION FOR PARTICIPANTS</p>
+      <div class="info-grid">
+        <div class="info-item">⏱️ Total Time: ~45 minutes</div>
+        <div class="info-item">💰 Compensation: gift card upon completion (yes, you get paid to be creative!)</div>
+        <div class="info-item">💻 Format: Online assessment you can complete at your convenience via a unique link sent to your email</div>
+        <div class="info-item">✅ Requirements: Signed informed consent (at the start of pre-survey) and completion of all three parts of the assessment</div>
+      </div>
+
+      <p class="section-subtitle">🚀 Your Creative Journey Today</p>
+      <div class="journey">
+        <div>📝 Pre-Survey (~10 minutes)</div>
+        <div>🎯 Creativity Tasks (~30 minutes) — This is where the fun begins!</div>
+        <div>💭 Post-Survey (~5 minutes)</div>
+      </div>
+
+      <p class="section-subtitle">⚡ IMPORTANT REMINDERS</p>
+      <ul class="reminders">
+        <li>✓ Complete all three parts to get your 💵</li>
+        <li>✓ Find your creative zone 🧘 — quiet space, no interruptions</li>
+        <li>✓ Stay connected 📶 — stable internet is a must!</li>
+        <li>✓ Block out 45 minutes ⏰ — do it all in one sitting</li>
+        <li>✓ Be yourself & have fun 🎉 — NOT a test! We want YOUR unique ideas!</li>
+      </ul>
+
+      <p class="section-subtitle">💬 QUESTIONS?</p>
+      <p class="contact">If you have any questions before, during, or after the assessment, please contact the research team at <a href="mailto:ashley.shen@unt.edu">ashley.shen@unt.edu</a>.</p>
+      <p class="contact">We're here to help! 😊</p>
+    </div>
   </div>
+
+  <div class="modal-backdrop" id="preSurveyModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="preSurveyTitle">
+      <div class="modal-header">
+        <p class="modal-title" id="preSurveyTitle">PART 1: 📝 PRE-SURVEY (~10 min)</p>
+        <button class="modal-close" type="button" id="preSurveyClose">Close</button>
+      </div>
+      <div class="modal-body" id="preSurveyBody">
+        <p><strong>Let's Get Started! 🎬</strong></p>
+        <p>Before the creative fun, tell us about yourself and your creative mindset.</p>
+        <p><strong>Instructions:</strong></p>
+        <p>💯 Answer honestly and thoughtfully</p>
+        <p>🎯 No right or wrong answers—we want YOUR perspective</p>
+        <p>⏭️ Complete everything before moving on</p>
+        <p>⚠️ Can't go back once you proceed!</p>
+        <p><strong>Ready? Let's go! 🚀</strong></p>
+        <div style="height:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" id="preSurveyContinue">Go/Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="postSurveyModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="postSurveyTitle">
+      <div class="modal-header">
+        <p class="modal-title" id="postSurveyTitle">PART 3: 💭 POST-SURVEY (~5 min)</p>
+        <button class="modal-close" type="button" id="postSurveyClose">Close</button>
+      </div>
+      <div class="modal-body" id="postSurveyBody">
+        <p><strong>Almost Done! 🏁</strong></p>
+        <p>Share your experience with us!</p>
+        <p><strong>Instructions:</strong></p>
+        <p>💬 Reflect on what you just did</p>
+        <p>💯 Answer honestly</p>
+        <p>🎯 Didn't receive feedback during tasks? No worries—you're in the control group! You can just skip the feedback questions!</p>
+        <p>✅ Review before submitting (no going back!)</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" id="postSurveyContinue">Go/Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const startBtn = document.getElementById("preSurveyStart");
+      const modal = document.getElementById("preSurveyModal");
+      const closeBtn = document.getElementById("preSurveyClose");
+      const body = document.getElementById("preSurveyBody");
+      const continueBtn = document.getElementById("preSurveyContinue");
+
+      const postStartBtn = document.getElementById("postSurveyStart");
+      const postModal = document.getElementById("postSurveyModal");
+      const postCloseBtn = document.getElementById("postSurveyClose");
+      const postContinueBtn = document.getElementById("postSurveyContinue");
+
+      function openModal(e) {
+        if (e) e.preventDefault();
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+        body.scrollTop = 0;
+      }
+
+      function closeModal() {
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+      }
+
+      startBtn.addEventListener("click", openModal);
+      closeBtn.addEventListener("click", closeModal);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+      continueBtn.addEventListener("click", () => {
+        const link = startBtn.getAttribute("data-link");
+        window.open(link, "_blank", "noopener");
+        closeModal();
+      });
+
+      function openPostModal(e) {
+        if (e) e.preventDefault();
+        postModal.style.display = "flex";
+        postModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closePostModal() {
+        postModal.style.display = "none";
+        postModal.setAttribute("aria-hidden", "true");
+      }
+
+      postStartBtn.addEventListener("click", openPostModal);
+      postCloseBtn.addEventListener("click", closePostModal);
+      postModal.addEventListener("click", (e) => {
+        if (e.target === postModal) closePostModal();
+      });
+      postContinueBtn.addEventListener("click", () => {
+        const link = postStartBtn.getAttribute("data-link");
+        window.open(link, "_blank", "noopener");
+        closePostModal();
+      });
+    })();
+  </script>
 </body>
 </html>

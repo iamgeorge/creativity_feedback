@@ -12,7 +12,10 @@
   .title{ font-size:22px; font-weight:600; }
   .clock{ font-variant-numeric: tabular-nums; padding:8px 12px; background:#fff; border:1px solid #ddd; border-radius:8px;}
   .panel{ background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px;}
-  .prompt{ font-size:18px; margin:0; }
+  .prompt-block{ text-align:center; margin-bottom:14px; }
+  .prompt-title{ font-size:26px; margin:0; font-weight:700; color:#222; }
+  .prompt-instruction{ font-size:14px; margin:8px 0 16px; color:#666; }
+  #answers{ margin-top:6px; }
   .row{ display:flex; align-items:flex-start; gap:10px; margin-top:10px; }
   .row input[type="text"]{ flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:8px; background:#fafafa; }
   .btn{ padding:10px 12px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; }
@@ -31,7 +34,7 @@
     <div class="topbar">
       <div class="title">Alternate Uses Task</div>
       <div>
-        <span class="clock" id="timer">05:00</span>
+        <span class="clock" id="timer">03:00</span>
         <button class="btn" id="startTimer">Start</button>
         <button class="btn" id="resetTimer">Reset</button>
         <span class="timeup" id="timeUpMsg" style="display:none;">Time is up</span>
@@ -39,12 +42,15 @@
     </div>
 
     <div class="panel">
-      <p class="prompt" id="prompt">Prompt will appear here</p>
+      <div class="prompt-block">
+        <h2 class="prompt-title" id="promptTitle">Prompt will appear here</h2>
+        <p class="prompt-instruction" id="promptInstruction">Think of as many uses as you can.</p>
+      </div>
       <div id="answers"></div>
 
       <div class="addbar">
         <button class="btn" id="addAnswer">Add another answer</button>
-        <span class="hint">Every row needs an answer and feedback before you move on.</span>
+        <span class="hint">Get feedback before adding another answer. Add at least one answer to continue.</span>
       </div>
 
       <div class="nav">
@@ -57,29 +63,31 @@
 
 <script>
 const QUESTIONS = [
-  { id: "paperclip", text: "Paperclip. Think of as many uses as you can." },
-  { id: "brick",     text: "Brick. Think of as many uses as you can." },
-  { id: "shoe",      text: "Shoe. Think of as many uses as you can." },
-  { id: "newspaper", text: "Newspaper. Think of as many uses as you can." },
-  { id: "tincan",    text: "Tin can. Think of as many uses as you can." }
+  { id: "brick",  title: "Brick",  instruction: "Think of as many uses as you can.", text: "Brick. Think of as many uses as you can." },
+  { id: "candle", title: "Candle", instruction: "Think of as many uses as you can.", text: "Candle. Think of as many uses as you can." },
+  { id: "pencil", title: "Pencil", instruction: "Think of as many uses as you can.", text: "Pencil. Think of as many uses as you can." },
+  { id: "pillow", title: "Pillow", instruction: "Think of as many uses as you can.", text: "Pillow. Think of as many uses as you can." },
+  { id: "sock",   title: "Sock",   instruction: "Think of as many uses as you can.", text: "Sock. Think of as many uses as you can." }
 ];
 
 const COMMON = {
-  paperclip: ["hold paper","bookmark","lock","pick","reset","sim","button","hair","hook","zipper","clean"],
-  brick: ["build","doorstop","paperweight","hold","press","step","weight"],
-  shoe: ["wear","store","plant","hammer","doorstop","paperweight"],
-  newspaper: ["read","clean","wrap","line","start fire","paper mache","swat","mask"],
-  tincan: ["store","pen holder","plant","cup","pencil","drum","string phone"]
+  brick: ["build","wall","doorstop","paperweight","step","weight"],
+  candle: ["light","decor","scent","birthday","melt","wax"],
+  pencil: ["write","draw","sketch","mark","erase","note"],
+  pillow: ["sleep","cushion","support","headrest","comfort"],
+  sock: ["wear","foot","warm","glove","pouch","clean"]
 };
 
 const LS_KEY = "aut_state_v4";
 let state = loadState();
 
-let duration = 5 * 60;
+let duration = 3 * 60;
 let timerId = null;
 let timeUp = false;
 
 const timerEl = document.getElementById("timer");
+const promptTitleEl = document.getElementById("promptTitle");
+const promptInstructionEl = document.getElementById("promptInstruction");
 const startBtn = document.getElementById("startTimer");
 const resetBtn = document.getElementById("resetTimer");
 const timeUpMsg = document.getElementById("timeUpMsg");
@@ -103,7 +111,7 @@ function startTimer(){
 function resetTimer(){
   clearInterval(timerId);
   timerId = null;
-  duration = 5*60;
+  duration = 3*60;
   timeUp = false;
   timeUpMsg.style.display = "none";
   renderTime();
@@ -122,7 +130,6 @@ function onTimeUp(){
 
 // DOM refs
 const answersWrap = document.getElementById("answers");
-const promptEl = document.getElementById("prompt");
 const progressEl = document.getElementById("progress");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
@@ -149,7 +156,8 @@ function render(){
   const q = QUESTIONS[state.index];
   ensureArraysFor(q.id);
 
-  promptEl.textContent = q.text;
+  promptTitleEl.textContent = q.title || q.text;
+  promptInstructionEl.textContent = q.instruction || "Think of as many uses as you can.";
   progressEl.textContent = `Question ${state.index+1} of ${QUESTIONS.length}`;
 
   resetTimer();
@@ -164,6 +172,7 @@ function render(){
 
   prevBtn.disabled = state.index === 0;
   updateNextButton();
+  updateAddButton();
   saveState();
 }
 
@@ -184,6 +193,7 @@ function addAnswerRow(i, value=""){
     if (t.length === 0) state.feedback[id][i] = false;
     saveState();
     updateNextButton();
+    updateAddButton();
   };
 
   const fbBtn = document.createElement("button");
@@ -201,6 +211,7 @@ function addAnswerRow(i, value=""){
     state.feedback[id][i] = t.length > 0;
     saveState();
     updateNextButton();
+    updateAddButton();
   };
 
   row.appendChild(input);
@@ -211,6 +222,7 @@ function addAnswerRow(i, value=""){
 
 addBtn.onclick = () => {
   if (timeUp) return;
+  if (!canAddAnother()) return;
   const id = currentId();
   ensureArraysFor(id);
   state.data[id].push("");
@@ -218,6 +230,7 @@ addBtn.onclick = () => {
   saveState();
   addAnswerRow(state.data[id].length - 1, "");
   updateNextButton(); // new empty row blocks moving on
+  updateAddButton();
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 };
 
@@ -249,27 +262,33 @@ function feedbackFor(qid, text, idx){
   return `${stars}  ${note}. Keep going.`;
 }
 
-// new strict rule:
-// move on only when every row has a non empty answer and feedback
 function canMoveOn(){
   const id = currentId();
   ensureArraysFor(id);
   const answers = state.data[id];
-  const fbArr = state.feedback[id];
   if (answers.length === 0) return false;
-
-  for (let i = 0; i < answers.length; i++){
-    const t = (answers[i] || "").trim();
-    if (t.length === 0) return false;      // empty row blocks
-    if (fbArr[i] !== true) return false;   // missing feedback blocks
-  }
-  return true;
+  return answers.some(t => (t || "").trim().length > 0);
 }
 
 function updateNextButton(){
   const allow = canMoveOn();
   const last = state.index === QUESTIONS.length - 1;
   nextBtn.disabled = !allow || last;
+}
+
+function canAddAnother(){
+  const id = currentId();
+  ensureArraysFor(id);
+  const answers = state.data[id];
+  if (answers.length === 0) return false;
+  const lastIdx = answers.length - 1;
+  const lastText = (answers[lastIdx] || "").trim();
+  if (!lastText) return false;
+  return state.feedback[id][lastIdx] === true;
+}
+
+function updateAddButton(){
+  addBtn.disabled = !canAddAnother();
 }
 
 function lockInputs(){
@@ -282,7 +301,7 @@ function unlockInputs(){
   timeUp = false;
   const inputs = answersWrap.querySelectorAll('input[type="text"]');
   inputs.forEach(inp => inp.disabled = false);
-  addBtn.disabled = false;
+  updateAddButton();
 }
 
 // nav

@@ -51,12 +51,17 @@
     border-radius:8px; font-size: 14px; color: #444;
     display: flex; align-items: center;
   }
+  .drawing-section { margin-top:16px; }
+  .drawing-pad { background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:10px; }
+  #drawCanvas { width:100%; height:380px; display:block; background:#fff; border-radius:8px; cursor: crosshair; touch-action: none; }
+  .draw-controls { display:flex; gap:10px; align-items:center; margin-top:10px; }
 
   /* --- LAYOUT VARIATIONS --- */
   
   /* Layout 1: Control Group (A) - Hides feedback elements completely */
   body.group-control .fb-btn-wrapper,
-  body.group-control .feedback-wrapper { display: none !important; }
+  body.group-control .feedback-wrapper,
+  body.group-control #drawingScore { display: none !important; }
   body.group-control .row input[type="text"] { flex: 1 1 100%; }
 
   /* Layout 2: Experimental Groups (B, C, D, E) - Standard layout */
@@ -70,6 +75,14 @@
   .hint { color:#666; font-size:13px; }
   .timeup { color:#b00020; font-weight:600; margin-left:8px; }
   .error-msg { color: #d32f2f; margin-top: 10px; font-size: 14px; display: none;}
+
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
+  .modal { background:#fff; width:min(720px, 96vw); max-height:86vh; border-radius:12px; border:1px solid #e3e3e3; display:flex; flex-direction:column; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee; }
+  .modal-title { font-size:18px; font-weight:700; margin:0; }
+  .modal-close { border:1px solid #ccc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
+  .modal-body { padding:14px 16px; overflow:auto; }
+  .modal-footer { padding:12px 16px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end; }
 </style>
 </head>
 <body>
@@ -93,14 +106,93 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="instructionScreen" style="display:none;">
+      <div class="prompt-block">
+        <h2 class="prompt-title" id="instructionTitle">Instructions</h2>
+      </div>
+      <div id="verbalInstructionBlock">
+        <div id="verbalInstrA" style="display:none;">
+          <p><strong>🎯 Your Mission</strong></p>
+          <p>You'll be given a common, everyday object. Your challenge? Think of as many different, unusual, and creative uses for it as possible! The more creative and original, the better! 🌈</p>
+          <p><strong>🏁 Setup:</strong></p>
+          <p>📖 Read the object name</p>
+          <p>⏱️ 3 minutes on the clock</p>
+          <p>👀 Timer visible on screen</p>
+          <p><strong>🎮 How It Works:</strong></p>
+          <p>Type each unusual use separately</p>
+          <p>Jump to your next idea! 💡</p>
+          <p>Keep going until time's up! ⏰</p>
+          <p>Remember: 🌈 No right answers—just creative ones!</p>
+        </div>
+        <div id="verbalInstrOther" style="display:none;">
+          <p><strong>🎯 Your Mission</strong></p>
+          <p>You'll be given a common, everyday object. Your challenge? Think of as many different, unusual, and creative uses for it as possible! The more creative and original, the better! 🌈</p>
+          <p><strong>🏁 Setup:</strong></p>
+          <p>📖 Read the object name</p>
+          <p>⏱️ 3 minutes on the clock</p>
+          <p>👀 Timer visible on screen</p>
+          <p><strong>🎮 How It Works:</strong></p>
+          <p>Type each unusual use separately</p>
+          <p>Click "Get Feedback" after each response 🔄</p>
+          <p>Read the feedback 📖</p>
+          <p>Jump to your next idea! 💡</p>
+          <p>Keep going until time's up! ⏰</p>
+          <p>Remember: 🌈 No right answers—just creative ones!</p>
+        </div>
+      </div>
+      <div id="figuralInstructionBlock" style="display:none;">
+        <div id="figuralInstrA" style="display:none;">
+          <p><strong>🎯 Your Mission</strong></p>
+          <p>You'll see an abstract figure or shape on your screen. Your challenge? Interpret what it could represent and generate as many different, unusual, and creative meanings as possible! 🖼️</p>
+          <p><strong>🏁 Setup:</strong></p>
+          <p>👁️ Study the abstract figure</p>
+          <p>⏱️ 3 minutes per figure</p>
+          <p>👀 Timer keeps you on track</p>
+          <p><strong>🎮 How It Works:</strong></p>
+          <p>Type each interpretation separately</p>
+          <p>Continue with your next idea! 💭</p>
+          <p>Remember: 🌈 No right answers—just creative ones!</p>
+        </div>
+        <div id="figuralInstrOther" style="display:none;">
+          <p><strong>🎯 Your Mission</strong></p>
+          <p>You'll see an abstract figure or shape on your screen. Your challenge? Interpret what it could represent and generate as many different, unusual, and creative meanings as possible! 🖼️</p>
+          <p><strong>🏁 Setup:</strong></p>
+          <p>👁️ Study the abstract figure</p>
+          <p>⏱️ 3 minutes per figure</p>
+          <p>👀 Timer keeps you on track</p>
+          <p><strong>🎮 How It Works:</strong></p>
+          <p>Type each interpretation separately</p>
+          <p>Click "Get Feedback" after each one 🔄</p>
+          <p>Review the feedback 👀</p>
+          <p>Continue with your next idea! 💭</p>
+          <p>Remember: 🌈 No right answers—just creative ones!</p>
+        </div>
+      </div>
+      <div class="nav">
+        <div></div>
+        <button class="btn" id="instructionContinue" style="background:var(--primary); color:#fff;">Start</button>
+      </div>
+    </div>
+
+    <div class="panel" id="taskPanel">
       <div class="prompt-block">
         <h2 class="prompt-title" id="promptTitle">Prompt loading...</h2>
         <p class="prompt-instruction" id="promptInstruction">Think of as many uses as you can.</p>
       </div>
       <div id="answers"></div>
+      <div id="drawingSection" class="drawing-section" style="display:none;">
+        <div class="drawing-pad">
+          <canvas id="drawCanvas"></canvas>
+        </div>
+        <div class="draw-controls">
+          <button class="btn" id="clearDrawing">Clear</button>
+          <button class="btn" id="submitDrawing" style="background:var(--primary); color:#fff;">Submit Drawing</button>
+          <span class="hint" id="drawingStatus"></span>
+        </div>
+        <div id="drawingScore" class="feedback" style="margin-top:10px;"></div>
+      </div>
 
-      <div class="addbar">
+      <div class="addbar" id="addBar">
         <button class="btn" id="addAnswer">Add another answer</button>
         <span class="hint" id="validationHint"></span>
       </div>
@@ -109,6 +201,23 @@
         <button class="btn" id="prevBtn">Back</button>
         <div class="progress" id="progress"></div>
         <button class="btn" id="nextBtn">Next Task</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="finishModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
+      <div class="modal-header">
+        <p class="modal-title" id="finishTitle">All Done</p>
+        <button class="modal-close" type="button" id="finishClose">Close</button>
+      </div>
+      <div class="modal-body" id="finishBody">
+        <p><strong>You have completed all tasks.</strong></p>
+        <p>Please return to complete the post-survey.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" id="finishPostBtn" style="background:var(--primary); color:#fff;">Go to post-survey</button>
+        <button class="btn" type="button" id="finishHomeBtn">Back to home</button>
       </div>
     </div>
   </div>
@@ -123,7 +232,7 @@
  * E = Exp 4 (Negative)
  */
 
-const QUESTIONS = [
+const VERBAL_QUESTIONS = [
   { id: "brick",  title: "Brick",  instruction: "Think of as many uses as you can.", text: "Brick. Think of as many uses as you can." },
   { id: "candle", title: "Candle", instruction: "Think of as many uses as you can.", text: "Candle. Think of as many uses as you can." },
   { id: "pencil", title: "Pencil", instruction: "Think of as many uses as you can.", text: "Pencil. Think of as many uses as you can." },
@@ -131,9 +240,27 @@ const QUESTIONS = [
   { id: "sock",   title: "Sock",   instruction: "Think of as many uses as you can.", text: "Sock. Think of as many uses as you can." }
 ];
 
+const FIGURAL_FILES = ["f1.png", "f2.png", "f3.png", "f4.png", "f5.png"];
+const FIGURAL_QUESTIONS = FIGURAL_FILES.map((file, idx) => ({
+  id: `figural_${idx + 1}`,
+  title: `Figural Task ${idx + 1}`,
+  instruction: "Draw directly on the figure below.",
+  text: `Figural Task ${idx + 1}`,
+  type: "drawing",
+  bg: `/figural/${file}`
+}));
+
+const ALL_QUESTIONS = [...VERBAL_QUESTIONS, ...FIGURAL_QUESTIONS];
+let QUESTIONS = [...ALL_QUESTIONS];
+// Keep in sync with templates/landing.html
+const POST_SURVEY_URL = "https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU";
+
 const SCORE_URL = window.location.protocol === "file:"
   ? "http://localhost:5555/score"
   : "/score";
+const DRAW_URL = window.location.protocol === "file:"
+  ? "http://localhost:5555/score-drawing"
+  : "/score-drawing";
 
 const LS_KEY = "aut_exp_state_v2_api";
 const LS_LOG_KEY = "aut_exp_log_v1";
@@ -141,10 +268,16 @@ let state = {
   userId: null,
   group: null, // 'A', 'B', 'C', 'D', 'E'
   index: 0,
+  questionOrder: [],
+  verbalIntroShown: false,
   data: {},
   feedbackGiven: {},
   feedbackText: {},
-  sent: {}
+  sent: {},
+  drawingData: {},
+  drawingScore: {},
+  drawingSubmitted: {},
+  drawingHasInk: {}
 };
 let interactionLog = loadLog() || [];
 
@@ -155,6 +288,16 @@ const userIdInput = document.getElementById("userIdInput");
 const loginBtn = document.getElementById("loginBtn");
 const loginError = document.getElementById("loginError");
 const mainApp = document.getElementById("mainApp");
+const instructionScreen = document.getElementById("instructionScreen");
+const instructionTitle = document.getElementById("instructionTitle");
+const instructionContinueBtn = document.getElementById("instructionContinue");
+const taskPanel = document.getElementById("taskPanel");
+const verbalInstrA = document.getElementById("verbalInstrA");
+const verbalInstrOther = document.getElementById("verbalInstrOther");
+const figuralInstrA = document.getElementById("figuralInstrA");
+const figuralInstrOther = document.getElementById("figuralInstrOther");
+const verbalInstructionBlock = document.getElementById("verbalInstructionBlock");
+const figuralInstructionBlock = document.getElementById("figuralInstructionBlock");
 
 loginBtn.onclick = handleLogin;
 userIdInput.addEventListener("keypress", (e) => { if(e.key === 'Enter') handleLogin(); });
@@ -176,14 +319,25 @@ function handleLogin() {
   if (!state.feedbackGiven) state.feedbackGiven = {};
   if (!state.feedbackText) state.feedbackText = {};
   if (!state.sent) state.sent = {};
+  if (!state.drawingData) state.drawingData = {};
+  if (!state.drawingScore) state.drawingScore = {};
+  if (!state.drawingSubmitted) state.drawingSubmitted = {};
+  if (!state.questionOrder) state.questionOrder = [];
+  if (!state.drawingHasInk) state.drawingHasInk = {};
+  if (state.figuralIntroShown === undefined) state.figuralIntroShown = false;
+  if (state.verbalIntroShown === undefined) state.verbalIntroShown = false;
   if (state.userId !== input) {
-    state = { userId: input, group: groupChar, index: 0, data: {}, feedbackGiven: {}, feedbackText: {}, sent: {} };
+    state = { userId: input, group: groupChar, index: 0, questionOrder: [], verbalIntroShown: false, data: {}, feedbackGiven: {}, feedbackText: {}, sent: {}, drawingData: {}, drawingScore: {}, drawingSubmitted: {}, drawingHasInk: {}, figuralIntroShown: false };
     saveState();
   }
 
+  applyQuestionOrder();
   applyLayout(state.group);
+  updateVerbalInstructions(state.group);
+  updateFiguralInstructions(state.group);
   loginScreen.style.display = "none";
   mainApp.style.display = "block";
+  showInstructionScreen(getInitialInstructionMode());
   initApp();
 }
 
@@ -203,11 +357,84 @@ function applyLayout(group) {
   }
 }
 
+function updateVerbalInstructions(group) {
+  const isA = group === "A";
+  if (verbalInstrA) verbalInstrA.style.display = isA ? "block" : "none";
+  if (verbalInstrOther) verbalInstrOther.style.display = isA ? "none" : "block";
+}
+
+function updateFiguralInstructions(group) {
+  const isA = group === "A";
+  if (figuralInstrA) figuralInstrA.style.display = isA ? "block" : "none";
+  if (figuralInstrOther) figuralInstrOther.style.display = isA ? "none" : "block";
+}
+
+function getUserNumber(id){
+  const m = (id || "").match(/\d+/g);
+  if (!m) return null;
+  const num = Number(m.join(""));
+  return Number.isFinite(num) ? num : null;
+}
+
+function applyQuestionOrder() {
+  const userNum = getUserNumber(state.userId);
+  const even = userNum !== null && userNum % 2 === 0;
+  const first = even ? FIGURAL_QUESTIONS : VERBAL_QUESTIONS;
+  const second = even ? VERBAL_QUESTIONS : FIGURAL_QUESTIONS;
+  QUESTIONS = [...first, ...second];
+  state.questionOrder = QUESTIONS.map((q) => q.id);
+  if (state.index >= QUESTIONS.length) {
+    state.index = 0;
+    saveState();
+  }
+}
+
+function getInitialInstructionMode() {
+  const q = QUESTIONS[state.index];
+  if (q && q.type === "drawing") {
+    return state.figuralIntroShown ? null : "figural";
+  }
+  return state.verbalIntroShown ? null : "verbal";
+}
+
+function showInstructionScreen(mode) {
+  if (!mode) return;
+  instructionScreen.style.display = "block";
+  taskPanel.style.display = "none";
+  if (mode === "verbal") {
+    instructionTitle.textContent = "💬 VERBAL TASKS: ALTERNATIVE USES TEST";
+    verbalInstructionBlock.style.display = "block";
+    figuralInstructionBlock.style.display = "none";
+  } else {
+    instructionTitle.textContent = "🎨 FIGURAL TASKS: FIGURE MEANINGS";
+    verbalInstructionBlock.style.display = "none";
+    figuralInstructionBlock.style.display = "block";
+  }
+}
+
+function hideInstructionScreen() {
+  instructionScreen.style.display = "none";
+  taskPanel.style.display = "block";
+}
+
+instructionContinueBtn.addEventListener("click", () => {
+  const q = QUESTIONS[state.index];
+  if (q && q.type === "drawing") {
+    if (!state.figuralIntroShown) state.figuralIntroShown = true;
+  } else {
+    if (!state.verbalIntroShown) state.verbalIntroShown = true;
+  }
+  saveState();
+  hideInstructionScreen();
+});
+
 // --- App Logic ---
 
 let duration = 3 * 60;
 let timerId = null;
+let autoAdvanceTimer = null;
 let timeUp = false;
+let timerQuestionIndex = null;
 
 // DOM Refs
 const timerEl = document.getElementById("timer");
@@ -219,8 +446,24 @@ const progressEl = document.getElementById("progress");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const addBtn = document.getElementById("addAnswer");
+const addBar = document.getElementById("addBar");
+const drawingSection = document.getElementById("drawingSection");
+const drawCanvas = document.getElementById("drawCanvas");
+const clearDrawingBtn = document.getElementById("clearDrawing");
+const submitDrawingBtn = document.getElementById("submitDrawing");
+const drawingStatusEl = document.getElementById("drawingStatus");
+const drawingScoreEl = document.getElementById("drawingScore");
+const drawingCtx = drawCanvas.getContext("2d");
+const finishModal = document.getElementById("finishModal");
+const finishCloseBtn = document.getElementById("finishClose");
+const finishPostBtn = document.getElementById("finishPostBtn");
+const finishHomeBtn = document.getElementById("finishHomeBtn");
+let drawingActive = false;
+let drawingLocked = false;
+let drawingBgLoading = false;
 
 function initApp() {
+  preloadFiguralImages();
   render();
   startTimer();
 }
@@ -245,14 +488,25 @@ addBtn.onclick = async () => {
 function startTimer(){
   if (timerId) return;
   timerId = setInterval(() => {
+    if (timeUp) { renderTime(); return; }
     duration -= 1;
     if (duration <= 0) {
-      clearInterval(timerId);
       duration = 0;
       onTimeUp();
     }
     renderTime();
   }, 1000);
+}
+
+function resetTimerForQuestion(){
+  if (timerQuestionIndex === state.index) return;
+  timerQuestionIndex = state.index;
+  duration = 3 * 60;
+  timeUp = false;
+  drawingLocked = false;
+  timeUpMsg.style.display = "none";
+  renderTime();
+  updateDrawingControls();
 }
 
 function renderTime(){
@@ -261,11 +515,34 @@ function renderTime(){
   timerEl.textContent = `${m}:${s}`;
 }
 
+function formatScore(value){
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Math.round(num * 1000) / 1000;
+}
+
 function onTimeUp(){
+  if (timeUp) return;
   timeUp = true;
   timeUpMsg.style.display = "inline";
   lockInputs();
   updateNextButton();
+  autoAdvanceAfterTimeUp();
+}
+
+function autoAdvanceAfterTimeUp(){
+  if (autoAdvanceTimer) return;
+  const startIndex = state.index;
+  autoAdvanceTimer = setTimeout(async () => {
+    autoAdvanceTimer = null;
+    if (!timeUp) return;
+    if (state.index !== startIndex) return;
+    if (state.index >= QUESTIONS.length - 1) return;
+    await flushUnsynced();
+    state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
+    saveState();
+    render();
+  }, 600);
 }
 
 function loadState(){
@@ -318,29 +595,289 @@ function ensureArraysFor(id){
   }
 }
 
+function ensureDrawingState(id){
+  if (!state.drawingData) state.drawingData = {};
+  if (!state.drawingScore) state.drawingScore = {};
+  if (!state.drawingSubmitted) state.drawingSubmitted = {};
+  if (!state.drawingHasInk) state.drawingHasInk = {};
+  if (!state.drawingData[id]) state.drawingData[id] = null;
+  if (!state.drawingScore[id]) state.drawingScore[id] = "";
+  if (!state.drawingSubmitted[id]) state.drawingSubmitted[id] = false;
+  if (state.drawingHasInk[id] === undefined) state.drawingHasInk[id] = !!state.drawingData[id];
+}
+
+function isDrawingTask(q){
+  return q && q.type === "drawing";
+}
+
 function render(){
+  resetTimerForQuestion();
   const q = QUESTIONS[state.index];
-  ensureArraysFor(q.id);
+  const drawingTask = isDrawingTask(q);
+  if (drawingTask) {
+    ensureDrawingState(q.id);
+  } else {
+    ensureArraysFor(q.id);
+  }
 
   promptTitleEl.textContent = q.title || q.text;
   promptInstructionEl.textContent = q.instruction || "Think of as many uses as you can.";
   progressEl.textContent = `Task ${state.index+1} of ${QUESTIONS.length}`;
 
-  answersWrap.innerHTML = "";
-  const arr = state.data[q.id];
-  if (arr.length === 0) {
-    arr.push("");
-    state.feedbackGiven[q.id].push(false);
-    state.feedbackText[q.id].push("");
-    state.sent[q.id].push(false);
+  if (drawingTask) {
+    answersWrap.style.display = "none";
+    addBar.style.display = "none";
+    drawingSection.style.display = "block";
+    renderDrawing();
+  } else {
+    drawingSection.style.display = "none";
+    answersWrap.style.display = "block";
+    addBar.style.display = "flex";
+    answersWrap.innerHTML = "";
+    const arr = state.data[q.id];
+    if (arr.length === 0) {
+      arr.push("");
+      state.feedbackGiven[q.id].push(false);
+      state.feedbackText[q.id].push("");
+      state.sent[q.id].push(false);
+    }
+    arr.forEach((val, i) => addAnswerRow(i, val));
   }
-  arr.forEach((val, i) => addAnswerRow(i, val));
 
-  prevBtn.disabled = state.index === 0;
+  // Lock "Back" to enforce forward-only progress.
+  prevBtn.disabled = true;
+  prevBtn.style.visibility = "hidden";
   updateNextButton();
   updateAddButton();
   saveState();
+
+  if (drawingTask) {
+    if (!state.figuralIntroShown) showInstructionScreen("figural");
+  } else {
+    if (!state.verbalIntroShown) showInstructionScreen("verbal");
+  }
 }
+
+function setupCanvas(){
+  const rect = drawCanvas.getBoundingClientRect();
+  const scale = window.devicePixelRatio || 1;
+  drawCanvas.width = rect.width * scale;
+  drawCanvas.height = rect.height * scale;
+  drawingCtx.setTransform(scale, 0, 0, scale, 0, 0);
+  drawingCtx.lineWidth = 3;
+  drawingCtx.lineCap = "round";
+  drawingCtx.strokeStyle = "#111";
+}
+
+const bgImageCache = {};
+
+function updateDrawingControls(){
+  submitDrawingBtn.disabled = timeUp || drawingBgLoading;
+  clearDrawingBtn.disabled = timeUp || drawingBgLoading;
+}
+
+function preloadFiguralImages(){
+  QUESTIONS.forEach((q) => {
+    if (!q.bg) return;
+    if (bgImageCache[q.bg]) return;
+    const img = new Image();
+    img.src = q.bg;
+    bgImageCache[q.bg] = img;
+  });
+}
+
+function drawBackgroundFor(q, done){
+  const rect = drawCanvas.getBoundingClientRect();
+  const src = q && q.bg ? q.bg : null;
+  const renderFallback = () => {
+    drawingCtx.clearRect(0, 0, rect.width, rect.height);
+    drawingCtx.fillStyle = "#fff";
+    drawingCtx.fillRect(0, 0, rect.width, rect.height);
+    drawingBgLoading = false;
+    updateDrawingControls();
+    if (done) done();
+  };
+  if (!src) {
+    renderFallback();
+    return;
+  }
+  let img = bgImageCache[src];
+  if (!img) {
+    img = new Image();
+    img.src = src;
+    bgImageCache[src] = img;
+  }
+  const render = () => {
+    drawingCtx.clearRect(0, 0, rect.width, rect.height);
+    const scale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+    const x = (rect.width - w) / 2;
+    const y = (rect.height - h) / 2;
+    drawingCtx.fillStyle = "#fff";
+    drawingCtx.fillRect(0, 0, rect.width, rect.height);
+    drawingCtx.drawImage(img, x, y, w, h);
+    drawingBgLoading = false;
+    updateDrawingControls();
+    if (done) done();
+  };
+  if (img.complete && img.naturalWidth) {
+    render();
+    return;
+  }
+  drawingBgLoading = true;
+  updateDrawingControls();
+  img.onload = () => {
+    render();
+    drawingBgLoading = false;
+  };
+  img.onerror = () => {
+    renderFallback();
+    drawingBgLoading = false;
+  };
+}
+
+function loadDrawingFromState(id){
+  const dataUrl = state.drawingData[id];
+  if (!dataUrl) {
+    drawBackgroundFor(QUESTIONS[state.index]);
+    return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    const rect = drawCanvas.getBoundingClientRect();
+    drawingCtx.clearRect(0, 0, rect.width, rect.height);
+    drawingCtx.drawImage(img, 0, 0, rect.width, rect.height);
+  };
+  img.src = dataUrl;
+}
+
+function saveDrawingState(id){
+  state.drawingData[id] = drawCanvas.toDataURL("image/png");
+  state.drawingSubmitted[id] = false;
+  state.drawingScore[id] = "";
+  drawingScoreEl.textContent = "";
+  drawingStatusEl.textContent = "";
+  saveState();
+  updateNextButton();
+}
+
+function renderDrawing(){
+  const id = currentId();
+  ensureDrawingState(id);
+  setupCanvas();
+  loadDrawingFromState(id);
+  drawingScoreEl.textContent = state.group === "A" ? "" : (state.drawingScore[id] || "");
+  drawingStatusEl.textContent = state.drawingSubmitted[id] ? "Submitted" : "";
+  updateDrawingControls();
+}
+
+function getCanvasPos(e){
+  const rect = drawCanvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+drawCanvas.addEventListener("pointerdown", (e) => {
+  if (drawingLocked || drawingBgLoading || timeUp) return;
+  const q = QUESTIONS[state.index];
+  if (!isDrawingTask(q)) return;
+  drawingActive = true;
+  const pos = getCanvasPos(e);
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(pos.x, pos.y);
+});
+
+drawCanvas.addEventListener("pointermove", (e) => {
+  if (!drawingActive || drawingLocked || drawingBgLoading || timeUp) return;
+  const pos = getCanvasPos(e);
+  drawingCtx.lineTo(pos.x, pos.y);
+  drawingCtx.stroke();
+  const id = currentId();
+  if (state.drawingHasInk && !state.drawingHasInk[id]) {
+    state.drawingHasInk[id] = true;
+    drawingStatusEl.textContent = "";
+  }
+});
+
+function stopDrawing(){
+  if (!drawingActive) return;
+  drawingActive = false;
+  drawingCtx.closePath();
+  const id = currentId();
+  if (isDrawingTask(QUESTIONS[state.index])) {
+    saveDrawingState(id);
+  }
+}
+
+drawCanvas.addEventListener("pointerup", stopDrawing);
+drawCanvas.addEventListener("pointerleave", stopDrawing);
+
+clearDrawingBtn.onclick = () => {
+  if (timeUp) return;
+  const id = currentId();
+  drawBackgroundFor(QUESTIONS[state.index]);
+  state.drawingData[id] = null;
+  state.drawingSubmitted[id] = false;
+  state.drawingScore[id] = "";
+  state.drawingHasInk[id] = false;
+  drawingScoreEl.textContent = "";
+  drawingStatusEl.textContent = "";
+  saveState();
+  updateNextButton();
+};
+
+submitDrawingBtn.onclick = async () => {
+  if (timeUp) return;
+  const id = currentId();
+  if (!isDrawingTask(QUESTIONS[state.index])) return;
+  if (!state.drawingHasInk || !state.drawingHasInk[id]) {
+    drawingStatusEl.textContent = "Please draw something before submitting.";
+    drawingScoreEl.textContent = "";
+    return;
+  }
+  if (state.group === "A") {
+    // Control group: allow submit but do not score or show feedback.
+    state.drawingSubmitted[id] = true;
+    state.drawingScore[id] = "";
+    drawingScoreEl.textContent = "";
+    drawingStatusEl.textContent = "Submitted";
+    saveState();
+    updateNextButton();
+    return;
+  }
+  submitDrawingBtn.disabled = true;
+  drawingStatusEl.textContent = "Scoring...";
+  drawingScoreEl.textContent = "";
+  try {
+    const dataUrl = drawCanvas.toDataURL("image/png");
+    const response = await fetch(DRAW_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    if (!response.ok) throw new Error("Server error");
+    const data = await response.json();
+    const score = data.score;
+    if (score !== undefined) {
+      const rounded = formatScore(score);
+      drawingScoreEl.textContent = rounded === null ? `Score: ${score}` : `Score: ${rounded}`;
+    } else {
+      drawingScoreEl.textContent = JSON.stringify(data);
+    }
+    state.drawingScore[id] = drawingScoreEl.textContent;
+    state.drawingSubmitted[id] = true;
+    drawingStatusEl.textContent = "Submitted";
+  } catch (err) {
+    console.error(err);
+    drawingStatusEl.textContent = "Error submitting drawing.";
+    drawingScoreEl.textContent = "";
+    state.drawingSubmitted[id] = false;
+  } finally {
+    submitDrawingBtn.disabled = false;
+    saveState();
+    updateNextButton();
+  }
+};
 
 function addAnswerRow(i, value=""){
   const row = document.createElement("div");
@@ -425,12 +962,19 @@ function addAnswerRow(i, value=""){
         // Below I check for common keys or fallback to JSON string.
         let displayMsg = "";
         
-        if (typeof data === 'string') {
+        if (typeof data === 'number' || (typeof data === 'string' && data.trim() !== "" && !Number.isNaN(Number(data)))) {
+            const rounded = formatScore(data);
+            displayMsg = rounded === null ? String(data) : `Score: ${rounded}`;
+        } else if (typeof data === 'string') {
             displayMsg = data;
+        } else if (data.originality !== undefined) {
+            const rounded = formatScore(data.originality);
+            displayMsg = rounded === null ? `Score: ${data.originality}` : `Score: ${rounded}`;
+        } else if (data.score !== undefined) {
+            const rounded = formatScore(data.score);
+            displayMsg = rounded === null ? `Score: ${data.score}` : `Score: ${rounded}`;
         } else if (data.feedback) {
             displayMsg = data.feedback;
-        } else if (data.score) {
-            displayMsg = `Score: ${data.score}`;
         } else {
             // Fallback if structure is unknown
             displayMsg = JSON.stringify(data); 
@@ -532,6 +1076,7 @@ async function sendEntry(questionId, questionText, answerText, feedbackText) {
 
 async function flushUnsynced() {
   const q = QUESTIONS[state.index];
+  if (isDrawingTask(q)) return;
   const id = q.id;
   ensureArraysFor(id);
   for (let i = 0; i < state.data[id].length; i++) {
@@ -547,7 +1092,12 @@ async function flushUnsynced() {
 
 // --- Validation Logic ---
 function canMoveOn(){
+  const q = QUESTIONS[state.index];
   const id = currentId();
+  if (isDrawingTask(q)) {
+    ensureDrawingState(id);
+    return state.drawingSubmitted[id] === true;
+  }
   ensureArraysFor(id);
   const answers = state.data[id];
   if (answers.length === 0) return false;
@@ -561,6 +1111,8 @@ function updateNextButton(){
 }
 
 function canAddAnother(){
+  const q = QUESTIONS[state.index];
+  if (isDrawingTask(q)) return false;
   const id = currentId();
   ensureArraysFor(id);
   const answers = state.data[id];
@@ -580,26 +1132,67 @@ function lockInputs(){
   const inputs = answersWrap.querySelectorAll('input[type="text"]');
   inputs.forEach(inp => inp.disabled = true);
   addBtn.disabled = true;
+  drawingLocked = true;
+  submitDrawingBtn.disabled = true;
+  clearDrawingBtn.disabled = true;
   updateNextButton();
+}
+
+function openFinishModal(){
+  if (!finishModal) return;
+  finishModal.style.display = "flex";
+  finishModal.setAttribute("aria-hidden", "false");
+}
+
+function closeFinishModal(){
+  if (!finishModal) return;
+  finishModal.style.display = "none";
+  finishModal.setAttribute("aria-hidden", "true");
+}
+
+function finishTasks(){
+  lockInputs();
+  nextBtn.disabled = true;
+  nextBtn.textContent = "Finished";
+  timeUp = true;
+  duration = 0;
+  renderTime();
+  openFinishModal();
 }
 
 // Nav
 prevBtn.onclick = () => {
-  state.index = Math.max(0, state.index - 1);
-  saveState();
-  render();
+  // Back navigation disabled (forward-only).
 };
 nextBtn.onclick = async () => {
   if (nextBtn.disabled) return;
   if (state.index === QUESTIONS.length - 1) {
-    const ok = window.confirm("Are you sure to finish");
-    if (!ok) return;
+    await flushUnsynced();
+    finishTasks();
+    return;
   }
   await flushUnsynced();
   state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
   saveState();
   render();
 };
+
+if (finishCloseBtn) finishCloseBtn.addEventListener("click", closeFinishModal);
+if (finishModal) {
+  finishModal.addEventListener("click", (e) => {
+    if (e.target === finishModal) closeFinishModal();
+  });
+}
+if (finishPostBtn) {
+  finishPostBtn.addEventListener("click", () => {
+    window.open(POST_SURVEY_URL, "_blank", "noopener");
+  });
+}
+if (finishHomeBtn) {
+  finishHomeBtn.addEventListener("click", () => {
+    window.location.href = "/";
+  });
+}
 
 </script>
 </body>

@@ -1,7 +1,9 @@
 import os
 import requests
 import json
-from flask import Flask, request, jsonify, render_template, make_response
+import base64
+import io
+from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import pooling
@@ -21,6 +23,8 @@ GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_API_KEY = "AIzaSyDt6jQwdMIXbtjWQpkAuYTOGRlSfOIK6Vg"
 GOOGLE_API_KEY = "AIzaSyDt6jQwdMIXbtjWQpkAuYTOGRlSfOIK6Vg"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OCSAI_MODEL_DIR = os.path.join(BASE_DIR, "ocsai-d-large")
+FIGURAL_DIR = os.path.join(BASE_DIR, "Figural")
 
 # MySQL configuration (credentials provided by user request)
 DB_CONFIG = {
@@ -37,6 +41,24 @@ DB_POOL = pooling.MySQLConnectionPool(pool_name="creativity_pool", pool_size=5, 
 
 def get_db():
     return DB_POOL.get_connection()
+
+
+_ocsai_processor = None
+_ocsai_model = None
+_ocsai_device = None
+
+
+def get_ocsai():
+    global _ocsai_processor, _ocsai_model, _ocsai_device
+    if _ocsai_model is None or _ocsai_processor is None:
+        from transformers import AutoImageProcessor, AutoModelForImageClassification
+        import torch
+
+        _ocsai_device = "cuda" if torch.cuda.is_available() else "cpu"
+        _ocsai_processor = AutoImageProcessor.from_pretrained(OCSAI_MODEL_DIR)
+        _ocsai_model = AutoModelForImageClassification.from_pretrained(OCSAI_MODEL_DIR).to(_ocsai_device)
+        _ocsai_model.eval()
+    return _ocsai_processor, _ocsai_model, _ocsai_device
 
 TABLE_MAP = {
     "a": "control",
@@ -163,6 +185,10 @@ def index():
 def tasks():
     return render_template("task.html")
 
+@app.route("/figural/<path:filename>", methods=["GET"])
+def figural_file(filename):
+    return send_from_directory(FIGURAL_DIR, filename)
+
 @app.route("/score", methods=["POST"])  # <--- 3. Remove "OPTIONS" from here, CORS handles it
 def score():
     # Remove the manual OPTIONS check; flask-cors handles it automatically.
@@ -183,6 +209,60 @@ def score():
 
     result, status = score_answer(item, answer, api_key)
     return jsonify(result), status
+
+
+@app.route("/score-drawing", methods=["POST"])
+def score_drawing():
+    try:
+        from PIL import Image
+        import torch
+    except Exception:
+        return jsonify({"error": "Pillow and torch are required to score drawings"}), 500
+
+    image = None
+
+    if request.files and "image" in request.files:
+        try:
+            image = Image.open(request.files["image"].stream)
+        except Exception:
+            return jsonify({"error": "Invalid image upload"}), 400
+    else:
+        raw_data = request.get_data(as_text=True)
+        try:
+            data = json.loads(raw_data) if raw_data else request.get_json()
+        except Exception:
+            data = request.get_json(silent=True)
+
+        if not data or "image" not in data:
+            return jsonify({"error": "image is required"}), 400
+
+        image_str = data.get("image", "")
+        if image_str.startswith("data:"):
+            parts = image_str.split(",", 1)
+            if len(parts) != 2:
+                return jsonify({"error": "Invalid data URL"}), 400
+            image_str = parts[1]
+
+        try:
+            image_bytes = base64.b64decode(image_str)
+            image = Image.open(io.BytesIO(image_bytes))
+        except Exception:
+            return jsonify({"error": "Invalid base64 image"}), 400
+
+    try:
+        image = image.convert("RGB")
+    except Exception:
+        return jsonify({"error": "Invalid image format"}), 400
+
+    try:
+        processor, model, device = get_ocsai()
+        inputs = processor(images=image, return_tensors="pt").to(device)
+        with torch.no_grad():
+            score = model(**inputs).logits.squeeze().item()
+    except Exception:
+        return jsonify({"error": "Failed to score image"}), 500
+
+    return jsonify({"score": score}), 200
 
 
 @app.route("/store", methods=["POST"])

@@ -61,7 +61,7 @@
           <p class="card-title">Creativity task</p>
           <p class="card-desc">Alternate uses task with timed prompts.</p>
           <div class="card-actions">
-            <a class="btn" href="templates/task.html"  target="_blank">Start task</a>
+            <a class="btn" href="#" id="taskStart" data-link="templates/task.html">Start task</a>
           </div>
         </div>
         <div class="card">
@@ -150,6 +150,30 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="taskModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
+      <div class="modal-header">
+        <p class="modal-title" id="taskTitle">PART 2: 🎨 CREATIVITY TASKS (~30 min)</p>
+        <button class="modal-close" type="button" id="taskClose">Close</button>
+      </div>
+      <div class="modal-body" id="taskBody">
+        <p><strong>🌟 This Is Where Your Creativity Shines!</strong></p>
+        <p>Unleash your imagination with 10 divergent thinking tasks:</p>
+        <p>💬 5 verbal tasks — reimagine everyday objects</p>
+        <p>🎨 5 figural tasks — interpret abstract shapes</p>
+        <p><strong>📌 Quick Notes:</strong></p>
+        <p>🔀 Tasks appear in random order</p>
+        <p>🚫 No skipping</p>
+        <p>⏪ No going back</p>
+        <p>⏰ 3 minutes per task — make it count!</p>
+        <p>Make sure to put in your user id!</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" id="taskContinue">Go/Continue</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       const startBtn = document.getElementById("preSurveyStart");
@@ -162,6 +186,12 @@
       const postModal = document.getElementById("postSurveyModal");
       const postCloseBtn = document.getElementById("postSurveyClose");
       const postContinueBtn = document.getElementById("postSurveyContinue");
+
+      const taskStartBtn = document.getElementById("taskStart");
+      const taskModal = document.getElementById("taskModal");
+      const taskCloseBtn = document.getElementById("taskClose");
+      const taskBody = document.getElementById("taskBody");
+      const taskContinueBtn = document.getElementById("taskContinue");
 
       function openModal(e) {
         if (e) e.preventDefault();
@@ -206,6 +236,29 @@
         const link = postStartBtn.getAttribute("data-link");
         window.open(link, "_blank", "noopener");
         closePostModal();
+      });
+
+      function openTaskModal(e) {
+        if (e) e.preventDefault();
+        taskModal.style.display = "flex";
+        taskModal.setAttribute("aria-hidden", "false");
+        taskBody.scrollTop = 0;
+      }
+
+      function closeTaskModal() {
+        taskModal.style.display = "none";
+        taskModal.setAttribute("aria-hidden", "true");
+      }
+
+      taskStartBtn.addEventListener("click", openTaskModal);
+      taskCloseBtn.addEventListener("click", closeTaskModal);
+      taskModal.addEventListener("click", (e) => {
+        if (e.target === taskModal) closeTaskModal();
+      });
+      taskContinueBtn.addEventListener("click", () => {
+        const link = taskStartBtn.getAttribute("data-link");
+        window.open(link, "_blank", "noopener");
+        closeTaskModal();
       });
     })();
   </script>

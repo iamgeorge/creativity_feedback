@@ -18,10 +18,8 @@ CORS(app)
 OPENSCORE_URL = "https://openscoring.du.edu/llm"
 MODEL = "ocsai1-4o"
 TASK = "uses"
-# Gemini config (paste your keys directly here)
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_API_KEY = "AIzaSyDt6jQwdMIXbtjWQpkAuYTOGRlSfOIK6Vg"
-GOOGLE_API_KEY = "AIzaSyDt6jQwdMIXbtjWQpkAuYTOGRlSfOIK6Vg"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+OPENSCORING_API_KEY = os.getenv("OPENSCORING_API_KEY", "").strip()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OCSAI_MODEL_DIR = os.path.join(BASE_DIR, "ocsai-d-large")
 FIGURAL_DIR = os.path.join(BASE_DIR, "Figural")
@@ -104,12 +102,20 @@ def load_prompt(prefix):
         return f.read().strip()
 
 
+def get_gemini_api_key():
+    api_key = (
+        os.getenv("GEMINI_API_KEY", "").strip()
+        or os.getenv("GOOGLE_API_KEY", "").strip()
+    )
+    if not api_key:
+        raise RuntimeError("Set GEMINI_API_KEY or GOOGLE_API_KEY in the server environment")
+    return api_key
+
+
 def generate_gemini_feedback(prefix, question, answer):
     if genai is None:
         raise RuntimeError("google-genai SDK is not installed")
-    api_key = GEMINI_API_KEY if GEMINI_API_KEY != "PASTE_YOUR_GEMINI_API_KEY_HERE" else GOOGLE_API_KEY
-    if not api_key or api_key in ("PASTE_YOUR_GEMINI_API_KEY_HERE", "PASTE_YOUR_GOOGLE_API_KEY_HERE"):
-        raise RuntimeError("Paste a real Gemini API key into app.py")
+    api_key = get_gemini_api_key()
 
     prompt_text = load_prompt(prefix)
     full_prompt = (
@@ -192,7 +198,7 @@ def score():
 
     item = data.get("item")
     answer = data.get("answer")
-    api_key = data.get("api_key")
+    api_key = data.get("api_key") or OPENSCORING_API_KEY or None
 
     if not item or not answer:
         return jsonify({"error": "item and answer are required"}), 400

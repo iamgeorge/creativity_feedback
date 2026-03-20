@@ -5,3 +5,9 @@
 - 提交到 `/store` 的数据会按用户组写入 `data/` 目录。
 - 生成的文件名分别是 `control.csv`、`evaluative.csv`、`informative.csv`、`positive.csv`、`negative.csv`。
 - 每个 CSV 都使用同一列结构：`user_id,time,question,answer,feedback`。
+
+密钥不要再写进代码。
+
+- Gemini 从服务端环境变量读取：`GEMINI_API_KEY` 或 `GOOGLE_API_KEY`。
+- OpenScoring 可选从服务端环境变量读取：`OPENSCORING_API_KEY`。
+- 本地可参考 `.env.example`，实际使用的 `.env` 已加入忽略，不会进 git。

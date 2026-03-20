@@ -3,10 +3,10 @@ import requests
 import json
 import base64
 import io
-from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
+import csv
+import threading
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
-import mysql.connector
-from mysql.connector import pooling
 try:
     from google import genai
 except Exception:
@@ -25,22 +25,9 @@ GOOGLE_API_KEY = "AIzaSyDt6jQwdMIXbtjWQpkAuYTOGRlSfOIK6Vg"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OCSAI_MODEL_DIR = os.path.join(BASE_DIR, "ocsai-d-large")
 FIGURAL_DIR = os.path.join(BASE_DIR, "Figural")
-
-# MySQL configuration (credentials provided by user request)
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "remoteuser",
-    "password": "StrongPassword123!",
-    "database": "creativity",
-    "port": 3306,
-}
-
-# Simple connection pool to reuse connections
-DB_POOL = pooling.MySQLConnectionPool(pool_name="creativity_pool", pool_size=5, **DB_CONFIG)
-
-
-def get_db():
-    return DB_POOL.get_connection()
+DATA_DIR = os.path.join(BASE_DIR, "data")
+CSV_HEADERS = ["user_id", "time", "question", "answer", "feedback"]
+CSV_LOCK = threading.Lock()
 
 
 _ocsai_processor = None
@@ -75,35 +62,38 @@ PROMPT_MAP = {
 }
 
 
+def get_csv_path(prefix):
+    table = TABLE_MAP.get(prefix)
+    if not table:
+        raise ValueError(f"Unknown user_id prefix: {prefix}")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    return os.path.join(DATA_DIR, f"{table}.csv")
+
+
 def store_user_entry(user_id, timestamp, question, answer, feedback):
     if not user_id:
         raise ValueError("user_id is required")
 
     prefix = user_id[0].lower()
-    table = TABLE_MAP.get(prefix)
-    if not table:
+    if prefix not in TABLE_MAP:
         raise ValueError(f"Unknown user_id prefix: {user_id[0]}")
 
-    conn = get_db()
-    try:
-        cur = conn.cursor()
-        if prefix == "a":
-            cur.execute(
-                f"INSERT INTO {table} (user_id, time, question, answer) VALUES (%s, %s, %s, %s)",
-                (user_id, timestamp, question, answer),
-            )
-        else:
-            cur.execute(
-                f"INSERT INTO {table} (user_id, time, question, answer, feedback) VALUES (%s, %s, %s, %s, %s)",
-                (user_id, timestamp, question, answer, feedback),
-            )
-        conn.commit()
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        conn.close()
+    csv_path = get_csv_path(prefix)
+    row = {
+        "user_id": user_id,
+        "time": timestamp,
+        "question": question,
+        "answer": answer,
+        "feedback": "" if prefix == "a" else (feedback or ""),
+    }
+
+    with CSV_LOCK:
+        file_exists = os.path.exists(csv_path)
+        with open(csv_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_HEADERS)
+            if not file_exists or os.path.getsize(csv_path) == 0:
+                writer.writeheader()
+            writer.writerow(row)
 
 
 def load_prompt(prefix):
@@ -322,22 +312,15 @@ def feedback():
 @app.route("/db-test", methods=["GET"])
 def db_test():
     try:
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        row = cur.fetchone()
-        return jsonify({"ok": True, "result": row[0]}), 200
+        files = {}
+        for prefix, table in TABLE_MAP.items():
+            path = get_csv_path(prefix)
+            exists = os.path.exists(path)
+            size = os.path.getsize(path) if exists else 0
+            files[table] = {"path": path, "exists": exists, "size": size}
+        return jsonify({"ok": True, "storage": "csv", "files": files}), 200
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
 
 
 

@@ -22,7 +22,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--image",
-        default="test_image.png",
+        default="scripts/test_image.png",
         help="Path to the image file to score.",
     )
     parser.add_argument(

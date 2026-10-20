@@ -1,0 +1,15 @@
+[Unit]
+Description=Creativity feedback study site (port 5555)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=george
+WorkingDirectory=/home/george/src/creativity_feedback
+# One process on purpose: the CSV lock and the drawing-scoring model live in it.
+ExecStart=/home/george/src/creativity_feedback/.venv/bin/gunicorn wsgi:app --bind 0.0.0.0:5555 --workers 1 --threads 16 --timeout 180 --access-logfile -
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

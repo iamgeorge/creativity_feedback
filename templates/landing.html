@@ -3,264 +3,248 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
 <title>Creativity Study</title>
+<link rel="preload" href="/static/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/site.css">
 <style>
-  :root { --pad: 14px; }
-  body{ margin:0; padding:0; background:#f7f7f7; font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;}
-  .wrap{ max-width:1000px; margin:24px auto; padding:0 16px;}
-  .topbar{ display:flex; align-items:center; justify-content:space-between; }
-  .title{ font-size:22px; font-weight:600; }
-  .panel{ background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px;}
-  .btn{ padding:10px 12px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; text-decoration:none; text-align:center; color:#111; display:inline-block; }
-  .btn:active{ transform:translateY(1px); }
-  .hint{ color:#666; font-size:14px; margin-top:6px;}
-  .cards{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:12px;}
-  .card{ border:1px solid #e3e3e3; border-radius:12px; padding:16px; background:#fff; display:flex; flex-direction:column; gap:8px; min-height:140px;}
-  .card-title{ font-size:18px; font-weight:600; margin:0; }
-  .card-desc{ margin:0; color:#555; }
-  .card-actions{ margin-top:auto; display:flex; gap:8px; }
-  .card .btn{ width:100%; }
-  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
-  .modal{ background:#fff; width:min(720px, 96vw); max-height:86vh; border-radius:12px; border:1px solid #e3e3e3; display:flex; flex-direction:column; }
-  .modal-header{ display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee; }
-  .modal-title{ font-size:18px; font-weight:700; margin:0; }
-  .modal-close{ border:1px solid #ccc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
-  .modal-body{ padding:14px 16px; overflow:auto; }
-  .modal-footer{ padding:12px 16px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end; }
-  .modal .btn[disabled]{ opacity:0.5; cursor:not-allowed; }
-  .section-title{ font-size:18px; font-weight:700; margin:0 0 8px; }
-  .section-subtitle{ font-size:16px; font-weight:600; margin:16px 0 8px; }
-  .info-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px 16px; }
-  .info-item{ background:#fafafa; border:1px solid #eee; border-radius:10px; padding:10px 12px; }
-  .journey{ display:flex; flex-direction:column; gap:6px; }
-  .reminders{ margin:8px 0 0 18px; color:#333; }
-  .contact{ margin:6px 0 0; }
-  @media (max-width: 800px){
-    .cards{ grid-template-columns:1fr; }
-    .info-grid{ grid-template-columns:1fr; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+  .site-header { padding: 20px 0; border-bottom: 1px solid var(--border); }
+  .wordmark { font-weight: 700; font-size: 18px; color: var(--text); }
+
+  .intro { padding: 56px 0 40px; max-width: 38rem; }
+  .intro h1 { font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.25rem); letter-spacing: -0.02em; }
+  .intro p { margin-top: 14px; font-size: 19px; color: var(--text-2); }
+
+  /* The three parts, in order */
+  .parts { list-style: none; margin: 0; padding: 0; counter-reset: part; }
+  .part {
+    counter-increment: part;
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 4px 20px; align-items: center;
+    padding: 24px; margin-top: 12px;
+  }
+  .part::before {
+    content: counter(part);
+    grid-row: span 2;
+    display: grid; place-items: center; width: 44px; height: 44px;
+    border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 18px;
+  }
+  .part h3 { font-size: 21px; }
+  .part .duration { font-weight: 400; font-size: 15px; color: var(--text-2); margin-left: 8px; }
+  .part p { grid-column: 2; color: var(--text-2); }
+  .part .btn { grid-row: 1 / span 2; grid-column: 3; }
+  .part--main { border-color: var(--accent); }
+
+  /* What to expect / Before you start */
+  .details { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding: 64px 0 56px; }
+  .details h2 { font-size: 22px; margin-bottom: 18px; }
+  .facts { margin: 0; display: grid; gap: 18px; }
+  .fact dt { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+  .fact .icon { width: 26px; height: 26px; color: var(--accent); }
+  .fact dd { margin: 2px 0 0 38px; color: var(--text-2); }
+  .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .checklist .icon { width: 24px; height: 24px; color: var(--accent); margin-top: 1px; }
+
+  .site-footer { border-top: 1px solid var(--border); padding: 28px 0 48px; color: var(--text-2); }
+  .site-footer p + p { margin-top: 4px; }
+
+  /* Dialogs */
+  dialog {
+    padding: 0; width: min(620px, calc(100vw - 32px)); max-height: 86vh;
+    color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-panel); box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgb(8 12 10 / 0.55); }
+  dialog[open] { animation: dialog-in 0.2s var(--ease); }
+  @keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+  .modal { display: flex; flex-direction: column; max-height: 86vh; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 20px 14px 24px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 20px; }
+  .modal-body { padding: 18px 24px 8px; overflow: auto; overscroll-behavior: contain; }
+  .modal-body p + p, .modal-body p + h3, .modal-body ul + p { margin-top: 12px; }
+  .modal-body h3 { font-size: 17px; margin: 16px 0 6px; }
+  .modal-body ul { margin: 6px 0 0; padding-left: 22px; }
+  .modal-body li { margin: 4px 0; }
+  .modal-footer { padding: 16px 24px 20px; display: flex; justify-content: flex-end; }
+
+  @media (max-width: 767px) {
+    .intro { padding: 36px 0 28px; }
+    .part { grid-template-columns: 44px 1fr; padding: 20px; }
+    .part::before { grid-row: span 2; width: 36px; height: 36px; font-size: 16px; }
+    .part .btn { grid-column: 1 / -1; grid-row: auto; margin-top: 12px; width: 100%; }
+    .part .duration { display: block; margin: 2px 0 0; }
+    .details { grid-template-columns: 1fr; gap: 40px; padding: 48px 0 40px; }
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">Creativity Study</div>
-      <div class="hint">Choose a section to begin.</div>
-    </div>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <div class="wrap"><span class="wordmark">Creativity Study</span></div>
+  </header>
 
-    <div class="panel">
-      <div class="cards">
-        <div class="card">
-          <p class="card-title">Pre-survey</p>
-          <p class="card-desc">Quick background questions before the task.</p>
-          <div class="card-actions">
-            <a class="btn" href="#" id="preSurveyStart" data-link="https://unt.az1.qualtrics.com/jfe/form/SV_3Len7L1iewEBAKa">Start pre-survey</a>
+  <main class="wrap" id="main" tabindex="-1">
+    <section class="intro" aria-labelledby="introTitle">
+      <h1 id="introTitle">Thanks for joining our creativity study</h1>
+      <p>Three parts, about 65 minutes, done in one sitting. Complete all three to receive your gift card.</p>
+    </section>
+
+    <section aria-labelledby="partsTitle">
+      <h2 id="partsTitle" class="sr-only">The three parts, in order</h2>
+      <ol class="parts">
+        <li class="part panel">
+          <h3>Pre-survey <span class="duration">about 10 minutes</span></h3>
+          <p>Quick background questions before the task.</p>
+          <button class="btn" type="button" data-dialog="preSurveyModal">Start Pre-Survey</button>
+        </li>
+        <li class="part part--main panel">
+          <h3>Creativity tasks <span class="duration">about 50 minutes</span></h3>
+          <p>10 short tasks, 5 minutes each. This is where the fun begins!</p>
+          <button class="btn btn-primary" type="button" data-dialog="taskModal">Start Task</button>
+        </li>
+        <li class="part panel">
+          <h3>Post-survey <span class="duration">about 5 minutes</span></h3>
+          <p>Reflection questions after finishing the task.</p>
+          <button class="btn" type="button" data-dialog="postSurveyModal">Start Post-Survey</button>
+        </li>
+      </ol>
+    </section>
+
+    <div class="details">
+      <section aria-labelledby="expectTitle">
+        <h2 id="expectTitle">What to expect</h2>
+        <dl class="facts">
+          <div class="fact">
+            <dt><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#clock"/></svg>Total time</dt><dd>About 65 minutes</dd>
           </div>
-        </div>
-        <div class="card">
-          <p class="card-title">Creativity task</p>
-          <p class="card-desc">Alternate uses task with timed prompts.</p>
-          <div class="card-actions">
-            <a class="btn" href="#" id="taskStart" data-link="templates/task.html">Start task</a>
+          <div class="fact">
+            <dt><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#gift"/></svg>Compensation</dt><dd>A gift card when you finish (yes, you get paid to be creative!)</dd>
           </div>
-        </div>
-        <div class="card">
-          <p class="card-title">Post-survey</p>
-          <p class="card-desc">Reflection questions after finishing the task.</p>
-          <div class="card-actions">
-    
-            <a class="btn" href="#" id="postSurveyStart" data-link="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU">Start post-survey</a>
+          <div class="fact">
+            <dt><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#laptop"/></svg>Format</dt><dd>Online, at your convenience, through a unique link sent to your email</dd>
           </div>
-        </div>
-      </div>
+          <div class="fact">
+            <dt><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#signature"/></svg>Requirements</dt><dd>Signed informed consent (at the start of the pre-survey) and all three parts completed</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section aria-labelledby="remindersTitle">
+        <h2 id="remindersTitle">Before you start</h2>
+        <ul class="checklist">
+          <li><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg><span>Complete all three parts to get paid</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg><span>Find your creative zone: a quiet space with no interruptions</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg><span>Stay connected: a stable internet connection is a must</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg><span>Block out 65 minutes and do it all in one sitting</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg><span>Be yourself and have fun: this is NOT a test! We want YOUR unique ideas.</span></li>
+        </ul>
+      </section>
     </div>
+  </main>
 
-    <div class="panel">
-      <p class="section-title">📋 GENERAL INFORMATION FOR PARTICIPANTS</p>
-      <div class="info-grid">
-        <div class="info-item">⏱️ Total Time: ~45 minutes</div>
-        <div class="info-item">💰 Compensation: gift card upon completion (yes, you get paid to be creative!)</div>
-        <div class="info-item">💻 Format: Online assessment you can complete at your convenience via a unique link sent to your email</div>
-        <div class="info-item">✅ Requirements: Signed informed consent (at the start of pre-survey) and completion of all three parts of the assessment</div>
-      </div>
-
-      <p class="section-subtitle">🚀 Your Creative Journey Today</p>
-      <div class="journey">
-        <div>📝 Pre-Survey (~10 minutes)</div>
-        <div>🎯 Creativity Tasks (~30 minutes) — This is where the fun begins!</div>
-        <div>💭 Post-Survey (~5 minutes)</div>
-      </div>
-
-      <p class="section-subtitle">⚡ IMPORTANT REMINDERS</p>
-      <ul class="reminders">
-        <li>✓ Complete all three parts to get your 💵</li>
-        <li>✓ Find your creative zone 🧘 — quiet space, no interruptions</li>
-        <li>✓ Stay connected 📶 — stable internet is a must!</li>
-        <li>✓ Block out 45 minutes ⏰ — do it all in one sitting</li>
-        <li>✓ Be yourself & have fun 🎉 — NOT a test! We want YOUR unique ideas!</li>
-      </ul>
-
-      <p class="section-subtitle">💬 QUESTIONS?</p>
-      <p class="contact">If you have any questions before, during, or after the assessment, please contact the research team at <a href="mailto:ashley.shen@unt.edu">ashley.shen@unt.edu</a>.</p>
-      <p class="contact">We're here to help! 😊</p>
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Questions before, during, or after the study? Contact the research team at <a href="mailto:ashley.shen@unt.edu">ashley.shen@unt.edu</a>.</p>
+      <p>We're here to help!</p>
     </div>
-  </div>
+  </footer>
 
-  <div class="modal-backdrop" id="preSurveyModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="preSurveyTitle">
+  <!-- Native <dialog>s: keep keyboard focus inside while open, close with Escape,
+       and hide the page behind them from screen readers. -->
+  <dialog id="preSurveyModal" aria-labelledby="preSurveyTitle">
+    <div class="modal">
       <div class="modal-header">
-        <p class="modal-title" id="preSurveyTitle">PART 1: 📝 PRE-SURVEY (~10 min)</p>
-        <button class="modal-close" type="button" id="preSurveyClose">Close</button>
+        <h2 class="modal-title" id="preSurveyTitle">Part 1: Pre-survey (~10 min)</h2>
+        <button class="btn btn-ghost" type="button" data-close>Close</button>
       </div>
-      <div class="modal-body" id="preSurveyBody">
-        <p><strong>Let's Get Started! 🎬</strong></p>
+      <div class="modal-body">
+        <p><strong>Let's get started!</strong></p>
         <p>Before the creative fun, tell us about yourself and your creative mindset.</p>
-        <p><strong>Instructions:</strong></p>
-        <p>💯 Answer honestly and thoughtfully</p>
-        <p>🎯 No right or wrong answers—we want YOUR perspective</p>
-        <p>⏭️ Complete everything before moving on</p>
-        <p>⚠️ Can't go back once you proceed!</p>
-        <p><strong>Ready? Let's go! 🚀</strong></p>
-        <div style="height:8px;"></div>
+        <h3>Instructions</h3>
+        <ul>
+          <li>Answer honestly and thoughtfully</li>
+          <li>There are no right or wrong answers; we want YOUR perspective</li>
+          <li>Complete everything before moving on</li>
+          <li>You can't go back once you proceed</li>
+        </ul>
+        <p><strong>Ready? Let's go!</strong></p>
       </div>
       <div class="modal-footer">
-        <button class="btn" type="button" id="preSurveyContinue">Go/Continue</button>
+        <a class="btn btn-primary" href="https://unt.az1.qualtrics.com/jfe/form/SV_3Len7L1iewEBAKa" target="_blank" rel="noopener" data-close>Open Pre-Survey<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#arrow-square-out"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
       </div>
     </div>
-  </div>
+  </dialog>
 
-  <div class="modal-backdrop" id="postSurveyModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="postSurveyTitle">
+  <dialog id="taskModal" aria-labelledby="taskTitle">
+    <div class="modal">
       <div class="modal-header">
-        <p class="modal-title" id="postSurveyTitle">PART 3: 💭 POST-SURVEY (~5 min)</p>
-        <button class="modal-close" type="button" id="postSurveyClose">Close</button>
+        <h2 class="modal-title" id="taskTitle">Part 2: Creativity tasks (~50 min)</h2>
+        <button class="btn btn-ghost" type="button" data-close>Close</button>
       </div>
-      <div class="modal-body" id="postSurveyBody">
-        <p><strong>Almost Done! 🏁</strong></p>
-        <p>Share your experience with us!</p>
-        <p><strong>Instructions:</strong></p>
-        <p>💬 Reflect on what you just did</p>
-        <p>💯 Answer honestly</p>
-        <p>🎯 Didn't receive feedback during tasks? No worries—you're in the control group! You can just skip the feedback questions!</p>
-        <p>✅ Review before submitting (no going back!)</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" type="button" id="postSurveyContinue">Go/Continue</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="taskModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
-      <div class="modal-header">
-        <p class="modal-title" id="taskTitle">PART 2: 🎨 CREATIVITY TASKS (~30 min)</p>
-        <button class="modal-close" type="button" id="taskClose">Close</button>
-      </div>
-      <div class="modal-body" id="taskBody">
-        <p><strong>🌟 This Is Where Your Creativity Shines!</strong></p>
+      <div class="modal-body">
+        <p><strong>This is where your creativity shines!</strong></p>
         <p>Unleash your imagination with 10 divergent thinking tasks:</p>
-        <p>💬 5 verbal tasks — reimagine everyday objects</p>
-        <p>🎨 5 figural tasks — interpret abstract shapes</p>
-        <p><strong>📌 Quick Notes:</strong></p>
-        <p>🔀 Tasks appear in random order</p>
-        <p>🚫 No skipping</p>
-        <p>⏪ No going back</p>
-        <p>⏰ 3 minutes per task — make it count!</p>
-        <p>Make sure to put in your user id!</p>
+        <ul>
+          <li>5 verbal tasks: reimagine everyday objects</li>
+          <li>5 figural tasks: interpret abstract shapes</li>
+        </ul>
+        <h3>Quick notes</h3>
+        <ul>
+          <li>Tasks appear in random order</li>
+          <li>No skipping</li>
+          <li>No going back</li>
+          <li>5 minutes per task, with at least 3 answers each</li>
+          <li>Only real, meaningful answers count</li>
+          <li>Make sure to enter your participant ID</li>
+        </ul>
       </div>
       <div class="modal-footer">
-        <button class="btn" type="button" id="taskContinue">Go/Continue</button>
+        <a class="btn btn-primary" href="templates/task.html" target="_blank" rel="noopener" data-close>Open Creativity Tasks<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#arrow-square-out"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
       </div>
     </div>
-  </div>
+  </dialog>
+
+  <dialog id="postSurveyModal" aria-labelledby="postSurveyTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="postSurveyTitle">Part 3: Post-survey (~5 min)</h2>
+        <button class="btn btn-ghost" type="button" data-close>Close</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Almost done!</strong></p>
+        <p>Share your experience with us!</p>
+        <h3>Instructions</h3>
+        <ul>
+          <li>Reflect on what you just did</li>
+          <li>Answer honestly</li>
+          <li>Didn't receive feedback during the tasks? No worries, you're in the control group! You can skip the feedback questions.</li>
+          <li>Review before submitting (no going back!)</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <!-- Keep the post-survey link in sync with templates/task.html -->
+        <a class="btn btn-primary" href="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU" target="_blank" rel="noopener" data-close>Open Post-Survey<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#arrow-square-out"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+    </div>
+  </dialog>
 
   <script>
-    (function () {
-      const startBtn = document.getElementById("preSurveyStart");
-      const modal = document.getElementById("preSurveyModal");
-      const closeBtn = document.getElementById("preSurveyClose");
-      const body = document.getElementById("preSurveyBody");
-      const continueBtn = document.getElementById("preSurveyContinue");
-
-      const postStartBtn = document.getElementById("postSurveyStart");
-      const postModal = document.getElementById("postSurveyModal");
-      const postCloseBtn = document.getElementById("postSurveyClose");
-      const postContinueBtn = document.getElementById("postSurveyContinue");
-
-      const taskStartBtn = document.getElementById("taskStart");
-      const taskModal = document.getElementById("taskModal");
-      const taskCloseBtn = document.getElementById("taskClose");
-      const taskBody = document.getElementById("taskBody");
-      const taskContinueBtn = document.getElementById("taskContinue");
-
-      function openModal(e) {
-        if (e) e.preventDefault();
-        modal.style.display = "flex";
-        modal.setAttribute("aria-hidden", "false");
-        body.scrollTop = 0;
-      }
-
-      function closeModal() {
-        modal.style.display = "none";
-        modal.setAttribute("aria-hidden", "true");
-      }
-
-      startBtn.addEventListener("click", openModal);
-      closeBtn.addEventListener("click", closeModal);
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
+    document.querySelectorAll("[data-dialog]").forEach((btn) => {
+      btn.addEventListener("click", () => document.getElementById(btn.dataset.dialog).showModal());
+    });
+    document.querySelectorAll("dialog").forEach((dialog) => {
+      dialog.querySelectorAll("[data-close]").forEach((el) => {
+        el.addEventListener("click", () => dialog.close());
       });
-      continueBtn.addEventListener("click", () => {
-        const link = startBtn.getAttribute("data-link");
-        window.open(link, "_blank", "noopener");
-        closeModal();
+      // Clicking the dimmed backdrop (outside the box) closes it too.
+      dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) dialog.close();
       });
-
-      function openPostModal(e) {
-        if (e) e.preventDefault();
-        postModal.style.display = "flex";
-        postModal.setAttribute("aria-hidden", "false");
-      }
-
-      function closePostModal() {
-        postModal.style.display = "none";
-        postModal.setAttribute("aria-hidden", "true");
-      }
-
-      postStartBtn.addEventListener("click", openPostModal);
-      postCloseBtn.addEventListener("click", closePostModal);
-      postModal.addEventListener("click", (e) => {
-        if (e.target === postModal) closePostModal();
-      });
-      postContinueBtn.addEventListener("click", () => {
-        const link = postStartBtn.getAttribute("data-link");
-        window.open(link, "_blank", "noopener");
-        closePostModal();
-      });
-
-      function openTaskModal(e) {
-        if (e) e.preventDefault();
-        taskModal.style.display = "flex";
-        taskModal.setAttribute("aria-hidden", "false");
-        taskBody.scrollTop = 0;
-      }
-
-      function closeTaskModal() {
-        taskModal.style.display = "none";
-        taskModal.setAttribute("aria-hidden", "true");
-      }
-
-      taskStartBtn.addEventListener("click", openTaskModal);
-      taskCloseBtn.addEventListener("click", closeTaskModal);
-      taskModal.addEventListener("click", (e) => {
-        if (e.target === taskModal) closeTaskModal();
-      });
-      taskContinueBtn.addEventListener("click", () => {
-        const link = taskStartBtn.getAttribute("data-link");
-        window.open(link, "_blank", "noopener");
-        closeTaskModal();
-      });
-    })();
+    });
   </script>
 </body>
 </html>

@@ -1,3 +1,16 @@
 .venv/
 data/
 .env
+
+# API keys kept as loose files
+gpt.txt
+gemini_api.txt
+
+__pycache__/
+.pytest_cache/
+
+# Model weights (2.5 GB, download separately from Hugging Face: Ocsai-D Large)
+ocsai-d-large/
+
+# Editor swap files
+*.swp

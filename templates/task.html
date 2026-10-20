@@ -3,224 +3,282 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Creativity Task Experiment (Connected)</title>
+<meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
+<title>Creativity Tasks</title>
+<link rel="preload" href="/static/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/site.css">
 <style>
-  :root { --pad: 14px; --primary: #2563eb; }
-  body { margin:0; padding:0; background:#f7f7f7; font:16px/1.45 system-ui, -apple-system, sans-serif; }
-  .wrap { max-width:1000px; margin:24px auto; padding:0 16px; }
-  
-  /* --- Login Screen Styles --- */
-  #loginScreen {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: #fff; z-index: 999; display: flex;
-    align-items: center; justify-content: center;
-  }
-  .login-box {
-    width: 300px; padding: 30px; border: 1px solid #ddd;
-    border-radius: 12px; background: #fafafa; text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
-  .login-box h2 { margin-top:0; }
-  .login-box input {
-    width: 90%; padding: 10px; margin-bottom: 15px;
-    border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
-  }
-  
-  /* --- Main App Styles --- */
-  .topbar { display:flex; align-items:center; justify-content:space-between; }
-  .title { font-size:22px; font-weight:600; }
-  .clock { font-variant-numeric: tabular-nums; padding:8px 12px; background:#fff; border:1px solid #ddd; border-radius:8px; }
-  .panel { background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:var(--pad); margin-top:16px; }
-  .prompt-block { text-align:center; margin-bottom:14px; }
-  .prompt-title { font-size:26px; margin:0; font-weight:700; color:#222; }
-  .prompt-instruction { font-size:14px; margin:8px 0 16px; color:#666; }
-  #answers { margin-top:6px; }
-  
-  .row { display:flex; align-items:flex-start; gap:10px; margin-top:10px; }
-  .row input[type="text"] { flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:8px; background:#fafafa; font-size:15px; }
-  
-  .btn { padding:10px 16px; border:1px solid #bbb; background:#fff; border-radius:8px; cursor:pointer; font-weight: 500; transition: all 0.2s; }
-  .btn:hover { background: #f0f0f0; }
-  .btn:active { transform:translateY(1px); }
-  .btn:disabled { opacity:0.5; cursor:not-allowed; }
-  
-  /* Feedback Styling */
-  .feedback { 
-    flex:1; min-height:42px; padding:10px 12px; 
-    border:1px solid #e6e6e6; background:#fcfcfc; 
-    border-radius:8px; font-size: 14px; color: #444;
-    display: flex; align-items: center;
-  }
-  .drawing-section { margin-top:16px; }
-  .drawing-pad { background:#fff; border:1px solid #e3e3e3; border-radius:12px; padding:10px; }
-  #drawCanvas { width:100%; height:380px; display:block; background:#fff; border-radius:8px; cursor: crosshair; touch-action: none; }
-  .draw-controls { display:flex; gap:10px; align-items:center; margin-top:10px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 20px 48px; }
 
-  /* --- LAYOUT VARIATIONS --- */
-  
-  /* Layout 1: Control Group (A) - Hides feedback elements completely */
+  /* --- Login --- */
+  #loginScreen { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: var(--bg); }
+  .login-box { width: min(380px, 100%); padding: 32px; }
+  .login-box h1 { font-size: 28px; }
+  .login-intro { margin: 10px 0 18px; color: var(--text-2); }
+  .login-box label { display: block; margin: 0 0 6px; font-weight: 700; }
+  .login-box .field { margin-bottom: 14px; }
+  .login-box .btn { width: 100%; }
+  .error-msg { color: var(--danger); margin-top: 12px; font-size: 15px; }
+
+  /* --- Top bar: title, timer, progress --- */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; }
+  .title { font-size: 18px; }
+  #clockWrap { display: flex; align-items: center; gap: 12px; }
+  .clock {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px;
+    border-radius: 999px; background: var(--surface); border: 1px solid var(--border);
+    font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .clock .icon { color: var(--accent); }
+  .timeup { color: var(--danger); font-weight: 700; }
+
+  .progress-block { margin-top: 18px; }
+  .progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; color: var(--text-2); margin-bottom: 8px; }
+  #progressLabel { color: var(--text); font-weight: 700; }
+  .progress-track { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease); }
+
+  /* --- Screens (one visible at a time) --- */
+  main .panel { margin-top: 20px; padding: 32px; animation: screen-in 0.25s var(--ease); }
+  @keyframes screen-in { from { opacity: 0; transform: translateY(6px); } }
+  .prompt-block { margin-bottom: 24px; }
+  .prompt-title { font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem); letter-spacing: -0.02em; }
+  .prompt-title .icon { color: var(--accent); margin-right: 6px; }
+  .prompt-instruction { margin-top: 8px; color: var(--text-2); }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* Instructions */
+  .instructions { max-width: 40rem; }
+  .instructions h3 { font-size: 18px; margin: 24px 0 8px; }
+  .instructions h3:first-child { margin-top: 0; }
+  .instructions ul, .instructions ol { margin: 0; padding-left: 24px; }
+  .instructions li { margin: 6px 0; padding-left: 4px; }
+  .instructions li::marker { color: var(--accent); font-weight: 700; }
+  .instructions .closing { margin-top: 24px; color: var(--text-2); }
+  body.group-control .fb-only { display: none; }
+
+  /* Verbal answers: [number] [answer box] [Get Feedback], feedback underneath */
+  #answers { display: grid; gap: 16px; }
+  .row { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px 10px; align-items: center; }
+  .row > * { min-width: 0; }
+  .idea-num { font-weight: 700; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
+  .feedback-wrapper { grid-column: 2 / -1; }
+  .feedback {
+    padding: 12px 14px; border-radius: var(--radius-control); overflow-wrap: anywhere;
+    background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--text);
+  }
+  .feedback:empty { display: none; }
+  .feedback.is-muted { background: var(--surface-2); border-left-color: var(--border-strong); color: var(--text-2); }
+  .feedback.is-error { background: var(--danger-soft); border-left-color: var(--danger); color: var(--danger); }
+  body.group-control .row { grid-template-columns: 28px 1fr; }
   body.group-control .fb-btn-wrapper,
   body.group-control .feedback-wrapper,
   body.group-control #drawingScore { display: none !important; }
-  body.group-control .row input[type="text"] { flex: 1 1 100%; }
 
-  /* Layout 2: Experimental Groups (B, C, D, E) - Standard layout */
-  body.group-exp .row input[type="text"] { flex: 2; }
-  body.group-exp .fb-btn-wrapper { flex: 0 0 auto; }
-  body.group-exp .feedback-wrapper { flex: 2; }
+  .addbar { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding-left: 38px; }
+  .hint { color: var(--text-2); font-size: 15px; }
 
-  .addbar { margin-top:16px; display:flex; gap:10px; align-items: center; }
-  .nav { display:flex; justify-content:space-between; margin-top:24px; border-top: 1px solid #eee; padding-top: 16px;}
-  .progress { color:#666; font-size:14px; align-self: center; }
-  .hint { color:#666; font-size:13px; }
-  .timeup { color:#b00020; font-weight:600; margin-left:8px; }
-  .error-msg { color: #d32f2f; margin-top: 10px; font-size: 14px; display: none;}
+  /* Figural drawing: the canvas stays white paper in both themes */
+  .drawing-pad { padding: 8px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-panel); }
+  #drawCanvas { width: 100%; height: 380px; display: block; background: #fff; border-radius: 8px; cursor: crosshair; touch-action: none; }
+  .draw-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+  #drawingScore { margin-top: 14px; }
 
-  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
-  .modal { background:#fff; width:min(720px, 96vw); max-height:86vh; border-radius:12px; border:1px solid #e3e3e3; display:flex; flex-direction:column; }
-  .modal-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eee; }
-  .modal-title { font-size:18px; font-weight:700; margin:0; }
-  .modal-close { border:1px solid #ccc; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
-  .modal-body { padding:14px 16px; overflow:auto; }
-  .modal-footer { padding:12px 16px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end; }
+  /* Check-in scales */
+  .mood-question { margin: 28px 0 0; padding: 0; border: none; min-width: 0; }
+  .mood-question legend { font-size: 18px; font-weight: 700; margin: 0 0 14px; padding: 0; }
+  .mood-scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .mood-face { cursor: pointer; }
+  .mood-face input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .mood-face-box {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px;
+    border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text);
+    transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease);
+  }
+  .mood-face:hover .mood-face-box { background: var(--surface-2); border-color: var(--border-strong); }
+  .mood-face svg { width: 100%; max-width: 52px; height: auto; }
+  .mood-face .mood-num { font-size: 15px; font-weight: 700; color: var(--text-2); }
+  .mood-face input:checked + .mood-face-box { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+  .mood-face input:checked + .mood-face-box .mood-num { color: var(--accent); }
+  .mood-face input:focus-visible + .mood-face-box { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mood-endlabels { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-2); margin-top: 8px; }
+
+  /* Done */
+  .done-icon { width: 48px; height: 48px; color: var(--accent); margin-bottom: 14px; }
+  #doneScreen p + p { margin-top: 6px; }
+  .done-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* Phones and zoomed-in text */
+  @media (max-width: 640px) {
+    .wrap { padding: 14px 16px 40px; }
+    main .panel { padding: 22px 18px; }
+    .clock { font-size: 18px; padding: 5px 12px; }
+    .row { grid-template-columns: 22px 1fr; }
+    .fb-btn-wrapper, .feedback-wrapper { grid-column: 2; }
+    .addbar { padding-left: 32px; }
+    .mood-scale { gap: 6px; }
+    .mood-face-box { padding: 8px 2px; }
+    #drawCanvas { height: 300px; }
+  }
 </style>
 </head>
 <body>
 
   <div id="loginScreen">
-    <div class="login-box">
-      <h2>Welcome</h2>
-      <p>Please enter your Participant ID to begin.</p>
-      <input type="text" id="userIdInput" placeholder="e.g., A1, B12..." autofocus>
-      <button class="btn" id="loginBtn" style="background:var(--primary); color:#fff; width:100%">Enter</button>
-      <div id="loginError" class="error-msg">Invalid ID format.</div>
-    </div>
+    <main class="login-box panel">
+      <h1>Welcome</h1>
+      <p class="login-intro">Enter the participant ID and password the research team sent you.</p>
+      <label for="userIdInput">Participant ID</label>
+      <input type="text" class="field" id="userIdInput" name="participant_id" placeholder="e.g., C014…" autocomplete="username" spellcheck="false" autocapitalize="characters" aria-describedby="loginError" autofocus>
+      <label for="passwordInput">Password</label>
+      <input type="password" class="field" id="passwordInput" name="password" autocomplete="current-password" spellcheck="false" autocapitalize="none" aria-describedby="loginError">
+      <button class="btn btn-primary" id="loginBtn">Enter</button>
+      <div id="loginError" class="error-msg" role="alert"></div>
+    </main>
   </div>
 
-  <div class="wrap" id="mainApp" style="display:none;">
+  <main class="wrap" id="mainApp" style="display:none;">
     <div class="topbar">
-      <div class="title">Alternate Uses Task</div>
-      <div>
-        <span class="clock" id="timer">03:00</span>
+      <h1 class="title">Creativity Tasks</h1>
+      <div id="clockWrap">
         <span class="timeup" id="timeUpMsg" style="display:none;">Time is up</span>
+        <span class="clock" role="timer"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#timer"/></svg><span class="sr-only">Time left: </span><span id="timer">05:00</span></span>
       </div>
     </div>
 
-    <div class="panel" id="instructionScreen" style="display:none;">
+    <div class="progress-block">
+      <div class="progress-label">
+        <span id="progressLabel">Getting started</span>
+        <span id="progressSection"></span>
+      </div>
+      <div class="progress-track" id="progressBar" role="progressbar" aria-labelledby="progressLabel" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Screen-reader announcements (timer reminders, feedback, status) -->
+    <div id="srAnnounce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <section class="panel" id="instructionScreen" style="display:none;" aria-labelledby="instructionTitle">
       <div class="prompt-block">
-        <h2 class="prompt-title" id="instructionTitle">Instructions</h2>
+        <h2 class="prompt-title" id="instructionTitle" tabindex="-1">Instructions</h2>
       </div>
-      <div id="verbalInstructionBlock">
-        <div id="verbalInstrA" style="display:none;">
-          <p><strong>🎯 Your Mission</strong></p>
-          <p>You'll be given a common, everyday object. Your challenge? Think of as many different, unusual, and creative uses for it as possible! The more creative and original, the better! 🌈</p>
-          <p><strong>🏁 Setup:</strong></p>
-          <p>📖 Read the object name</p>
-          <p>⏱️ 3 minutes on the clock</p>
-          <p>👀 Timer visible on screen</p>
-          <p><strong>🎮 How It Works:</strong></p>
-          <p>Type each unusual use separately</p>
-          <p>Jump to your next idea! 💡</p>
-          <p>Keep going until time's up! ⏰</p>
-          <p>Remember: 🌈 No right answers—just creative ones!</p>
-        </div>
-        <div id="verbalInstrOther" style="display:none;">
-          <p><strong>🎯 Your Mission</strong></p>
-          <p>You'll be given a common, everyday object. Your challenge? Think of as many different, unusual, and creative uses for it as possible! The more creative and original, the better! 🌈</p>
-          <p><strong>🏁 Setup:</strong></p>
-          <p>📖 Read the object name</p>
-          <p>⏱️ 3 minutes on the clock</p>
-          <p>👀 Timer visible on screen</p>
-          <p><strong>🎮 How It Works:</strong></p>
-          <p>Type each unusual use separately</p>
-          <p>Click "Get Feedback" after each response 🔄</p>
-          <p>Read the feedback 📖</p>
-          <p>Jump to your next idea! 💡</p>
-          <p>Keep going until time's up! ⏰</p>
-          <p>Remember: 🌈 No right answers—just creative ones!</p>
-        </div>
+      <div id="verbalInstructionBlock" class="instructions">
+        <h3>Your mission</h3>
+        <p>You'll be given a common, everyday object. Think of as many different, unusual, and creative uses for it as you can. The more creative and original, the better!</p>
+        <h3>Setup</h3>
+        <ul>
+          <li>Read the object name at the top of the screen</li>
+          <li>You have 5 minutes for each object</li>
+          <li>Give at least 3 answers within the 5 minutes to move on</li>
+          <li>The timer at the top of the screen shows the time left<span class="sr-only">. Reminders are also announced at 1 minute, at 30 seconds, and when time is up</span></li>
+        </ul>
+        <h3>How it works</h3>
+        <ol>
+          <li>Type one use in the answer box</li>
+          <li class="fb-only">Click &ldquo;Get Feedback&rdquo; and read the feedback</li>
+          <li>Click &ldquo;Add Another Answer&rdquo; for your next idea</li>
+          <li>Keep going until time&rsquo;s up</li>
+        </ol>
+        <h3>Meaningful answers only</h3>
+        <p>Every answer should be a real use for the object. Random letters or filler such as &ldquo;idk&rdquo; <span class="fb-only">get no feedback and </span>do not count toward your 3 answers. If that happens, change the answer to a real idea<span class="fb-only"> and click &ldquo;Get Feedback&rdquo; again</span>.</p>
+        <p class="closing">Remember: there are no right answers, just creative ones!</p>
       </div>
-      <div id="figuralInstructionBlock" style="display:none;">
-        <div id="figuralInstrA" style="display:none;">
-          <p><strong>🎯 Your Mission</strong></p>
-          <p>You'll see an abstract figure or shape on your screen. Your challenge? Interpret what it could represent and generate as many different, unusual, and creative meanings as possible! 🖼️</p>
-          <p><strong>🏁 Setup:</strong></p>
-          <p>👁️ Study the abstract figure</p>
-          <p>⏱️ 3 minutes per figure</p>
-          <p>👀 Timer keeps you on track</p>
-          <p><strong>🎮 How It Works:</strong></p>
-          <p>Type each interpretation separately</p>
-          <p>Continue with your next idea! 💭</p>
-          <p>Remember: 🌈 No right answers—just creative ones!</p>
-        </div>
-        <div id="figuralInstrOther" style="display:none;">
-          <p><strong>🎯 Your Mission</strong></p>
-          <p>You'll see an abstract figure or shape on your screen. Your challenge? Interpret what it could represent and generate as many different, unusual, and creative meanings as possible! 🖼️</p>
-          <p><strong>🏁 Setup:</strong></p>
-          <p>👁️ Study the abstract figure</p>
-          <p>⏱️ 3 minutes per figure</p>
-          <p>👀 Timer keeps you on track</p>
-          <p><strong>🎮 How It Works:</strong></p>
-          <p>Type each interpretation separately</p>
-          <p>Click "Get Feedback" after each one 🔄</p>
-          <p>Review the feedback 👀</p>
-          <p>Continue with your next idea! 💭</p>
-          <p>Remember: 🌈 No right answers—just creative ones!</p>
-        </div>
+      <div id="figuralInstructionBlock" class="instructions" style="display:none;">
+        <h3>Your mission</h3>
+        <p>You'll see an abstract, unfinished figure. Imagine what it could become, then draw on it to turn it into a picture. The more unusual and creative, the better!</p>
+        <h3>Setup</h3>
+        <ul>
+          <li>Study the figure</li>
+          <li>You have 5 minutes for each figure</li>
+          <li>Submit at least 3 drawings within the 5 minutes to move on</li>
+          <li>The timer at the top of the screen shows the time left<span class="sr-only">. Reminders are also announced at 1 minute, at 30 seconds, and when time is up</span></li>
+        </ul>
+        <h3>How it works</h3>
+        <ol>
+          <li>Draw on the figure with your mouse, finger, or stylus (click &ldquo;Clear&rdquo; to start over)</li>
+          <li>Click &ldquo;Submit Drawing&rdquo; when you&rsquo;re done</li>
+          <li class="fb-only">Read the feedback</li>
+          <li>Click &ldquo;New Drawing&rdquo; to start another drawing on the same figure</li>
+          <li>Make as many different drawings as you can until time&rsquo;s up</li>
+        </ol>
+        <p class="closing">Remember: there are no right answers, just creative ones!</p>
       </div>
       <div class="nav">
         <div></div>
-        <button class="btn" id="instructionContinue" style="background:var(--primary); color:#fff;">Start</button>
+        <button class="btn btn-primary" id="instructionContinue">Start<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#arrow-right"/></svg></button>
       </div>
-    </div>
+    </section>
 
-    <div class="panel" id="taskPanel">
+    <section class="panel" id="taskPanel" style="display:none;" aria-labelledby="promptTitle">
       <div class="prompt-block">
-        <h2 class="prompt-title" id="promptTitle">Prompt loading...</h2>
-        <p class="prompt-instruction" id="promptInstruction">Think of as many uses as you can.</p>
+        <h2 class="prompt-title" id="promptTitle" tabindex="-1">Prompt loading…</h2>
+        <p class="prompt-instruction" id="promptInstruction">Think of as many uses as you can for the item above.</p>
       </div>
       <div id="answers"></div>
       <div id="drawingSection" class="drawing-section" style="display:none;">
         <div class="drawing-pad">
-          <canvas id="drawCanvas"></canvas>
+          <canvas id="drawCanvas" role="img" aria-label="Drawing area showing the figure. Drawing needs a mouse, touchscreen, or stylus."></canvas>
         </div>
         <div class="draw-controls">
-          <button class="btn" id="clearDrawing">Clear</button>
-          <button class="btn" id="submitDrawing" style="background:var(--primary); color:#fff;">Submit Drawing</button>
+          <button class="btn" id="clearDrawing"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#eraser"/></svg><span id="clearDrawingLabel">Clear</span></button>
+          <button class="btn btn-primary" id="submitDrawing">Submit Drawing</button>
           <span class="hint" id="drawingStatus"></span>
         </div>
-        <div id="drawingScore" class="feedback" style="margin-top:10px;"></div>
+        <p class="hint" id="drawingCount" style="margin-top:10px;"></p>
+        <div id="drawingScore" class="feedback"></div>
       </div>
 
       <div class="addbar" id="addBar">
-        <button class="btn" id="addAnswer">Add another answer</button>
+        <button class="btn" id="addAnswer" aria-describedby="validationHint"><svg class="icon" aria-hidden="true"><use href="/static/icons.svg#plus"/></svg>Add Another Answer</button>
         <span class="hint" id="validationHint"></span>
       </div>
 
       <div class="nav">
         <button class="btn" id="prevBtn">Back</button>
-        <div class="progress" id="progress"></div>
-        <button class="btn" id="nextBtn">Next Task</button>
+        <button class="btn btn-primary" id="nextBtn">Next Task</button>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="modal-backdrop" id="finishModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
-      <div class="modal-header">
-        <p class="modal-title" id="finishTitle">All Done</p>
-        <button class="modal-close" type="button" id="finishClose">Close</button>
+    <section class="panel" id="moodScreen" style="display:none;" aria-labelledby="moodTitle">
+      <div class="prompt-block">
+        <h2 class="prompt-title" id="moodTitle" tabindex="-1">Post-task mood scale</h2>
+        <p class="prompt-instruction" id="moodSubtitle">Please select the face that best matches how you feel right now.</p>
       </div>
-      <div class="modal-body" id="finishBody">
-        <p><strong>You have completed all tasks.</strong></p>
-        <p>Please return to complete the post-survey.</p>
+
+      <fieldset class="mood-question">
+        <legend id="moodPleasantQuestion">How pleasant did you feel during the task?</legend>
+        <div class="mood-scale" id="moodScalePleasant"></div>
+        <div class="mood-endlabels" aria-hidden="true"><span>Very unpleasant</span><span>Very pleasant</span></div>
+      </fieldset>
+
+      <fieldset class="mood-question">
+        <legend id="moodAlertQuestion">How alert or energized did you feel during the task?</legend>
+        <div class="mood-scale" id="moodScaleAlert"></div>
+        <div class="mood-endlabels" aria-hidden="true"><span>Very calm</span><span>Very excited</span></div>
+      </fieldset>
+
+      <div class="nav">
+        <div></div>
+        <button class="btn btn-primary" id="moodContinueBtn" disabled>Save and Continue</button>
       </div>
-      <div class="modal-footer">
-        <button class="btn" type="button" id="finishPostBtn" style="background:var(--primary); color:#fff;">Go to post-survey</button>
-        <button class="btn" type="button" id="finishHomeBtn">Back to home</button>
+    </section>
+
+    <section class="panel" id="doneScreen" style="display:none;" aria-labelledby="doneTitle">
+      <svg class="icon done-icon" aria-hidden="true"><use href="/static/icons.svg#check-circle"/></svg>
+      <div class="prompt-block">
+        <h2 class="prompt-title" id="doneTitle" tabindex="-1">All done, thank you!</h2>
       </div>
-    </div>
-  </div>
+      <p><strong>You have completed all the creativity tasks.</strong></p>
+      <p>Your last step is the post-survey.</p>
+      <div class="done-actions">
+        <!-- Keep the post-survey link in sync with templates/landing.html -->
+        <a class="btn" href="/">Back to Home</a>
+        <a class="btn btn-primary" href="https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU" target="_blank" rel="noopener">Go to Post-Survey<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#arrow-square-out"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+    </section>
+  </main>
 
 <script>
 /** * CONFIGURATION 
@@ -232,12 +290,15 @@
  * E = Exp 4 (Negative)
  */
 
+// `instruction` is what participants see; `text` is what gets stored and sent
+// to the feedback model, so keep it unchanged to keep the data consistent.
+const VERBAL_INSTRUCTION = "Think of as many uses as you can for the item above.";
 const VERBAL_QUESTIONS = [
-  { id: "brick",  title: "Brick",  instruction: "Think of as many uses as you can.", text: "Brick. Think of as many uses as you can." },
-  { id: "candle", title: "Candle", instruction: "Think of as many uses as you can.", text: "Candle. Think of as many uses as you can." },
-  { id: "pencil", title: "Pencil", instruction: "Think of as many uses as you can.", text: "Pencil. Think of as many uses as you can." },
-  { id: "pillow", title: "Pillow", instruction: "Think of as many uses as you can.", text: "Pillow. Think of as many uses as you can." },
-  { id: "sock",   title: "Sock",   instruction: "Think of as many uses as you can.", text: "Sock. Think of as many uses as you can." }
+  { id: "brick",  title: "Brick",  instruction: VERBAL_INSTRUCTION, text: "Brick. Think of as many uses as you can." },
+  { id: "candle", title: "Candle", instruction: VERBAL_INSTRUCTION, text: "Candle. Think of as many uses as you can." },
+  { id: "pencil", title: "Pencil", instruction: VERBAL_INSTRUCTION, text: "Pencil. Think of as many uses as you can." },
+  { id: "pillow", title: "Pillow", instruction: VERBAL_INSTRUCTION, text: "Pillow. Think of as many uses as you can." },
+  { id: "sock",   title: "Sock",   instruction: VERBAL_INSTRUCTION, text: "Sock. Think of as many uses as you can." }
 ];
 
 const FIGURAL_FILES = ["f1.png", "f2.png", "f3.png", "f4.png", "f5.png"];
@@ -247,13 +308,19 @@ const FIGURAL_QUESTIONS = FIGURAL_FILES.map((file, idx) => ({
   instruction: "Draw directly on the figure below.",
   text: `Figural Task ${idx + 1}`,
   type: "drawing",
+  file,
   bg: `/figural/${file}`
 }));
 
 const ALL_QUESTIONS = [...VERBAL_QUESTIONS, ...FIGURAL_QUESTIONS];
 let QUESTIONS = [...ALL_QUESTIONS];
-// Keep in sync with templates/landing.html
-const POST_SURVEY_URL = "https://unt.az1.qualtrics.com/jfe/form/SV_8j46AytpYzcnFnU";
+
+// Shown when scoring/feedback fails. The participant can retry or keep going
+// (instead of getting stuck), and FEEDBACK_ERROR_LOG goes into the feedback
+// column so researchers can spot and exclude those rows.
+const FEEDBACK_ERROR_MSG = "Feedback isn't available right now. You can try again, or keep going with your next idea.";
+const DRAWING_ERROR_MSG = "Feedback isn't available right now. You can try again, or move on to the next task.";
+const FEEDBACK_ERROR_LOG = "[error: feedback unavailable]";
 
 const SCORE_URL = window.location.protocol === "file:"
   ? "http://localhost:5555/score"
@@ -261,6 +328,9 @@ const SCORE_URL = window.location.protocol === "file:"
 const DRAW_URL = window.location.protocol === "file:"
   ? "http://localhost:5555/score-drawing"
   : "/score-drawing";
+
+const TASK_SECONDS = 5 * 60;   // time per task
+const MIN_ANSWERS = 3;         // answers (or drawings) needed before "Next Task" unlocks
 
 const LS_KEY = "aut_exp_state_v2_api";
 const LS_LOG_KEY = "aut_exp_log_v1";
@@ -273,9 +343,11 @@ let state = {
   data: {},
   feedbackGiven: {},
   feedbackText: {},
+  feedbackScore: {},
   sent: {},
   drawingData: {},
   drawingScore: {},
+  drawingRawScore: {},
   drawingSubmitted: {},
   drawingHasInk: {}
 };
@@ -288,21 +360,22 @@ const userIdInput = document.getElementById("userIdInput");
 const loginBtn = document.getElementById("loginBtn");
 const loginError = document.getElementById("loginError");
 const mainApp = document.getElementById("mainApp");
-const instructionScreen = document.getElementById("instructionScreen");
 const instructionTitle = document.getElementById("instructionTitle");
 const instructionContinueBtn = document.getElementById("instructionContinue");
-const taskPanel = document.getElementById("taskPanel");
-const verbalInstrA = document.getElementById("verbalInstrA");
-const verbalInstrOther = document.getElementById("verbalInstrOther");
-const figuralInstrA = document.getElementById("figuralInstrA");
-const figuralInstrOther = document.getElementById("figuralInstrOther");
 const verbalInstructionBlock = document.getElementById("verbalInstructionBlock");
 const figuralInstructionBlock = document.getElementById("figuralInstructionBlock");
+const clockWrap = document.getElementById("clockWrap");
+const progressLabelEl = document.getElementById("progressLabel");
+const progressSectionEl = document.getElementById("progressSection");
+const progressBarEl = document.getElementById("progressBar");
+const progressFillEl = document.getElementById("progressFill");
+const srAnnounceEl = document.getElementById("srAnnounce");
 
 loginBtn.onclick = handleLogin;
-userIdInput.addEventListener("keypress", (e) => { if(e.key === 'Enter') handleLogin(); });
+const passwordInput = document.getElementById("passwordInput");
+[userIdInput, passwordInput].forEach((el) => el.addEventListener("keypress", (e) => { if (e.key === "Enter") handleLogin(); }));
 
-function handleLogin() {
+async function handleLogin() {
   const input = userIdInput.value.trim().toUpperCase();
   if (!input || input.length < 2) {
     showError("Please enter a valid ID (e.g., A101).");
@@ -315,58 +388,125 @@ function handleLogin() {
     return;
   }
 
+  // Only IDs (and passwords) created by the research team on /admin can start.
+  let token = null;
+  loginBtn.disabled = true;
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: input, password: passwordInput.value })
+    });
+    if (!res.ok) throw new Error("Server error");
+    const login = await res.json();
+    if (!login.valid) {
+      showError("That ID and password don't match. Please check the ID and password the research team sent you.");
+      return;
+    }
+    token = login.token;
+  } catch (err) {
+    showError("Could not reach the server. Please check your connection and try again.");
+    return;
+  } finally {
+    loginBtn.disabled = false;
+  }
+
   state = loadState() || state;
   if (!state.feedbackGiven) state.feedbackGiven = {};
   if (!state.feedbackText) state.feedbackText = {};
+  if (!state.feedbackScore) state.feedbackScore = {};
   if (!state.sent) state.sent = {};
   if (!state.drawingData) state.drawingData = {};
   if (!state.drawingScore) state.drawingScore = {};
+  if (!state.drawingRawScore) state.drawingRawScore = {};
   if (!state.drawingSubmitted) state.drawingSubmitted = {};
   if (!state.questionOrder) state.questionOrder = [];
   if (!state.drawingHasInk) state.drawingHasInk = {};
+  if (!state.drawingCount) state.drawingCount = {};
   if (state.figuralIntroShown === undefined) state.figuralIntroShown = false;
   if (state.verbalIntroShown === undefined) state.verbalIntroShown = false;
+  if (state.baselineMoodShown === undefined) state.baselineMoodShown = false;
   if (state.userId !== input) {
-    state = { userId: input, group: groupChar, index: 0, questionOrder: [], verbalIntroShown: false, data: {}, feedbackGiven: {}, feedbackText: {}, sent: {}, drawingData: {}, drawingScore: {}, drawingSubmitted: {}, drawingHasInk: {}, figuralIntroShown: false };
+    state = { userId: input, group: groupChar, index: 0, questionOrder: [], verbalIntroShown: false, data: {}, feedbackGiven: {}, feedbackText: {}, feedbackScore: {}, sent: {}, drawingData: {}, drawingScore: {}, drawingRawScore: {}, drawingSubmitted: {}, drawingHasInk: {}, drawingCount: {}, figuralIntroShown: false, baselineMoodShown: false };
     saveState();
   }
 
+  state.token = token; // sent with every saved row
+  saveState();
   applyQuestionOrder();
   applyLayout(state.group);
-  updateVerbalInstructions(state.group);
-  updateFiguralInstructions(state.group);
   loginScreen.style.display = "none";
   mainApp.style.display = "block";
-  showInstructionScreen(getInitialInstructionMode());
-  initApp();
+  if (state.finished) {
+    showScreen("done");
+  } else if (!state.baselineMoodShown) {
+    showBaselineMoodScreen();
+  } else {
+    initApp();
+  }
 }
 
 function showError(msg) {
   loginError.textContent = msg;
-  loginError.style.display = "block";
+  userIdInput.setAttribute("aria-invalid", "true");
+  userIdInput.focus();
 }
 
 function applyLayout(group) {
   document.body.className = ""; 
   if (group === 'A') {
     document.body.classList.add('group-control');
-    document.getElementById('validationHint').textContent = "Add at least one answer to continue.";
   } else {
     document.body.classList.add('group-exp');
-    document.getElementById('validationHint').textContent = "Get feedback before adding another answer. Add at least one answer to continue.";
   }
 }
 
-function updateVerbalInstructions(group) {
-  const isA = group === "A";
-  if (verbalInstrA) verbalInstrA.style.display = isA ? "block" : "none";
-  if (verbalInstrOther) verbalInstrOther.style.display = isA ? "none" : "block";
+// --- Screens: exactly one panel is visible at a time ---
+const SCREEN_IDS = { instructions: "instructionScreen", task: "taskPanel", mood: "moodScreen", done: "doneScreen" };
+let currentScreen = null;
+
+function showScreen(name){
+  Object.entries(SCREEN_IDS).forEach(([key, elId]) => {
+    document.getElementById(elId).style.display = key === name ? "block" : "none";
+  });
+  currentScreen = name;
+  clockWrap.style.visibility = (name === "task" || name === "instructions") ? "visible" : "hidden";
+  updateProgress();
+  window.scrollTo({ top: 0 });
+  // Move focus to the new screen's heading so keyboard and screen-reader
+  // users land at the start of the new content.
+  const heading = document.getElementById(SCREEN_IDS[name]).querySelector("h2");
+  if (heading) heading.focus();
 }
 
-function updateFiguralInstructions(group) {
-  const isA = group === "A";
-  if (figuralInstrA) figuralInstrA.style.display = isA ? "block" : "none";
-  if (figuralInstrOther) figuralInstrOther.style.display = isA ? "none" : "block";
+function updateProgress(){
+  const total = QUESTIONS.length;
+  let label, section = "", completed;
+  if (currentScreen === "done") {
+    label = `All ${total} tasks complete`;
+    completed = total;
+  } else if (currentScreen === "mood" && moodMode === "pre") {
+    label = "Getting started";
+    completed = 0;
+  } else {
+    label = `Task ${state.index + 1} of ${total}`;
+    if (currentScreen === "mood") section = "Quick check-in";
+    else section = isDrawingTask(QUESTIONS[state.index]) ? "Figural tasks" : "Verbal tasks";
+    completed = currentScreen === "mood" ? state.index + 1 : state.index;
+  }
+  progressLabelEl.textContent = label;
+  progressSectionEl.textContent = section;
+  progressBarEl.setAttribute("aria-valuemax", String(total));
+  progressBarEl.setAttribute("aria-valuenow", String(completed));
+  progressBarEl.setAttribute("aria-valuetext", `${completed} of ${total} tasks completed`);
+  progressFillEl.style.transform = `scaleX(${completed / total})`;
+  document.title = `${label} | Creativity Tasks`;
+}
+
+// Read a message out to screen-reader users (polite live region).
+function announce(msg){
+  srAnnounceEl.textContent = "";
+  setTimeout(() => { srAnnounceEl.textContent = msg; }, 50);
 }
 
 function getUserNumber(id){
@@ -397,24 +537,17 @@ function getInitialInstructionMode() {
   return state.verbalIntroShown ? null : "verbal";
 }
 
+const INSTRUCTION_TITLES = {
+  verbal: '<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#chat-circle-text"/></svg>Verbal tasks: Alternative Uses Test',
+  figural: '<svg class="icon" aria-hidden="true"><use href="/static/icons.svg#paint-brush"/></svg>Figural tasks: Figure Meanings'
+};
+
 function showInstructionScreen(mode) {
   if (!mode) return;
-  instructionScreen.style.display = "block";
-  taskPanel.style.display = "none";
-  if (mode === "verbal") {
-    instructionTitle.textContent = "💬 VERBAL TASKS: ALTERNATIVE USES TEST";
-    verbalInstructionBlock.style.display = "block";
-    figuralInstructionBlock.style.display = "none";
-  } else {
-    instructionTitle.textContent = "🎨 FIGURAL TASKS: FIGURE MEANINGS";
-    verbalInstructionBlock.style.display = "none";
-    figuralInstructionBlock.style.display = "block";
-  }
-}
-
-function hideInstructionScreen() {
-  instructionScreen.style.display = "none";
-  taskPanel.style.display = "block";
+  instructionTitle.innerHTML = INSTRUCTION_TITLES[mode];
+  verbalInstructionBlock.style.display = mode === "verbal" ? "block" : "none";
+  figuralInstructionBlock.style.display = mode === "verbal" ? "none" : "block";
+  showScreen("instructions");
 }
 
 instructionContinueBtn.addEventListener("click", () => {
@@ -425,13 +558,12 @@ instructionContinueBtn.addEventListener("click", () => {
     if (!state.verbalIntroShown) state.verbalIntroShown = true;
   }
   saveState();
-  hideInstructionScreen();
   render();
 });
 
 // --- App Logic ---
 
-let duration = 3 * 60;
+let duration = TASK_SECONDS;
 let timerId = null;
 let autoAdvanceTimer = null;
 let timeUp = false;
@@ -443,7 +575,6 @@ const timeUpMsg = document.getElementById("timeUpMsg");
 const answersWrap = document.getElementById("answers");
 const promptTitleEl = document.getElementById("promptTitle");
 const promptInstructionEl = document.getElementById("promptInstruction");
-const progressEl = document.getElementById("progress");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const addBtn = document.getElementById("addAnswer");
@@ -455,13 +586,190 @@ const submitDrawingBtn = document.getElementById("submitDrawing");
 const drawingStatusEl = document.getElementById("drawingStatus");
 const drawingScoreEl = document.getElementById("drawingScore");
 const drawingCtx = drawCanvas.getContext("2d");
-const finishModal = document.getElementById("finishModal");
-const finishCloseBtn = document.getElementById("finishClose");
-const finishPostBtn = document.getElementById("finishPostBtn");
-const finishHomeBtn = document.getElementById("finishHomeBtn");
 let drawingActive = false;
 let drawingLocked = false;
 let drawingBgLoading = false;
+
+// --- Mood check-in (before the first task, after the first half, after all tasks) ---
+const moodTitleEl = document.getElementById("moodTitle");
+const moodSubtitleEl = document.getElementById("moodSubtitle");
+const moodPleasantQuestionEl = document.getElementById("moodPleasantQuestion");
+const moodAlertQuestionEl = document.getElementById("moodAlertQuestion");
+const moodScalePleasantEl = document.getElementById("moodScalePleasant");
+const moodScaleAlertEl = document.getElementById("moodScaleAlert");
+const moodContinueBtn = document.getElementById("moodContinueBtn");
+let moodSelection = { pleasant: null, alert: null };
+let moodMode = "post"; // "pre" (baseline, before any task) | "post" (after a task)
+let pendingAdvanceAction = null; // "next" | "finish"
+let moodQuestionId = null; // question this mood rating belongs to
+let moodTaskElapsed = null; // seconds spent on the task, captured at "Next" click
+let moodTaskText = null; // task prompt text, captured at "Next" click
+
+const MOOD_COPY = {
+  pre: {
+    title: "Before we begin",
+    subtitle: "We\u2019ll ask how you feel three times: now, halfway through, and at the end. This helps us understand how the tasks feel. There are no right or wrong answers, and it only takes a few seconds. Please select the face that best matches how you feel right now.",
+    pleasant: "How pleasant do you feel right now?",
+    alert: "How alert or energized do you feel right now?"
+  },
+  post: {
+    title: "Quick check-in",
+    subtitle: "A few seconds before you continue: this helps us understand how the tasks feel. There are no right or wrong answers. Please select the face that best matches how you feel right now.",
+    pleasant: "How pleasant did you feel during these tasks?",
+    alert: "How alert or energized did you feel during these tasks?"
+  }
+};
+
+function applyMoodCopy(mode){
+  const copy = MOOD_COPY[mode];
+  moodTitleEl.textContent = copy.title;
+  moodSubtitleEl.textContent = copy.subtitle;
+  moodPleasantQuestionEl.textContent = copy.pleasant;
+  moodAlertQuestionEl.textContent = copy.alert;
+}
+
+// Mouth path per pleasantness level (1 = very unpleasant, 5 = very pleasant)
+const PLEASANT_MOUTHS = [
+  "M 20 40 Q 28 30 36 40",       // frown
+  "M 20 38 Q 28 32 36 38",       // slight frown
+  "M 20 36 L 36 36",             // neutral
+  "M 20 34 Q 28 40 36 34",       // slight smile
+  "M 18 32 Q 28 44 38 32"        // big smile
+];
+const PLEASANT_BROWS = [
+  { l: "M 16 20 L 24 23", r: "M 40 20 L 32 23" }, // angry
+  { l: "M 16 21 L 24 23", r: "M 40 21 L 32 23" },
+  null,
+  null,
+  null
+];
+
+// Eye/brow style per alertness level (1 = very calm, 5 = very excited)
+function alertFaceParts(level){
+  if (level === 1) return { eyes: "M 18 26 Q 22 23 26 26 M 30 26 Q 34 23 38 26", mouth: "M 20 36 L 36 36", spikes: false };
+  if (level === 2) return { eyes: "M 18 26 L 26 25 M 30 25 L 38 26", mouth: "M 20 36 L 36 36", spikes: false };
+  if (level === 3) return { eyes: "dots", mouthOpen: 3, spikes: false };
+  if (level === 4) return { eyes: "dots", mouthOpen: 5, spikes: false };
+  return { eyes: "dots", mouthOpen: 6, spikes: true };
+}
+
+function faceSvg(kind, level){
+  const cx = 28, cy = 28, r = 26;
+  let inner = `<circle class="face-circle" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="currentColor" stroke-width="2"/>`;
+  if (kind === "pleasant") {
+    if (level <= 2) {
+      inner += `<line x1="16" y1="20" x2="24" y2="23" stroke="currentColor" stroke-width="2"/>`;
+      inner += `<line x1="40" y1="20" x2="32" y2="23" stroke="currentColor" stroke-width="2"/>`;
+    }
+    inner += `<circle cx="20" cy="26" r="2" fill="currentColor"/><circle cx="36" cy="26" r="2" fill="currentColor"/>`;
+    inner += `<path d="${PLEASANT_MOUTHS[level-1]}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+  } else {
+    const parts = alertFaceParts(level);
+    if (parts.spikes) {
+      inner += `<line x1="28" y1="2" x2="28" y2="9" stroke="currentColor" stroke-width="2"/>`;
+      inner += `<line x1="14" y1="6" x2="19" y2="13" stroke="currentColor" stroke-width="2"/>`;
+      inner += `<line x1="42" y1="6" x2="37" y2="13" stroke="currentColor" stroke-width="2"/>`;
+    }
+    if (parts.eyes === "dots") {
+      inner += `<circle cx="20" cy="25" r="2" fill="currentColor"/><circle cx="36" cy="25" r="2" fill="currentColor"/>`;
+    } else {
+      inner += `<path d="${parts.eyes}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+    }
+    if (parts.mouthOpen) {
+      inner += `<ellipse cx="28" cy="34" rx="${parts.mouthOpen}" ry="${parts.mouthOpen * 0.6}" fill="none" stroke="currentColor" stroke-width="2"/>`;
+    } else {
+      inner += `<path d="${parts.mouth}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">${inner}</svg>`;
+}
+
+// End-point labels, also read out by screen readers for options 1 and 5.
+const MOOD_ANCHORS = {
+  pleasant: ["Very unpleasant", "Very pleasant"],
+  alert: ["Very calm", "Very excited"]
+};
+
+// Each scale is a native radio group (inside a fieldset/legend), so screen
+// readers announce the question, the option and its position, and arrow keys work.
+function buildMoodScale(container, kind){
+  container.innerHTML = "";
+  for (let level = 1; level <= 5; level++) {
+    const anchor = level === 1 ? MOOD_ANCHORS[kind][0] : level === 5 ? MOOD_ANCHORS[kind][1] : "";
+    const option = document.createElement("label");
+    option.className = "mood-face";
+    option.innerHTML = `<input type="radio" name="mood-${kind}" value="${level}">`
+      + `<span class="mood-face-box">${faceSvg(kind, level)}<span class="mood-num">${level}</span></span>`
+      + (anchor ? `<span class="sr-only"> (${anchor})</span>` : "");
+    option.querySelector("input").addEventListener("change", () => {
+      moodSelection[kind] = level;
+      updateMoodContinueButton();
+    });
+    container.appendChild(option);
+  }
+}
+buildMoodScale(moodScalePleasantEl, "pleasant");
+buildMoodScale(moodScaleAlertEl, "alert");
+
+function updateMoodContinueButton(){
+  moodContinueBtn.disabled = !(moodSelection.pleasant && moodSelection.alert);
+}
+
+function resetMoodSelections(){
+  moodSelection = { pleasant: null, alert: null };
+  [moodScalePleasantEl, moodScaleAlertEl].forEach(el => {
+    el.querySelectorAll("input").forEach(input => { input.checked = false; });
+  });
+  updateMoodContinueButton();
+}
+
+async function sendMoodEntry(){
+  await sendEntry(`${moodQuestionId}__mood_pleasant`, moodTaskText, String(moodSelection.pleasant), null, null, moodTaskElapsed, "mood_pleasant");
+  await sendEntry(`${moodQuestionId}__mood_alert`, moodTaskText, String(moodSelection.alert), null, null, moodTaskElapsed, "mood_alert");
+}
+
+function showMoodScreen(){
+  moodMode = "post";
+  applyMoodCopy("post");
+  moodQuestionId = currentId();
+  // Stored as the row's "question": which half of the study this check-in follows.
+  moodTaskText = `Check-in after ${isDrawingTask(QUESTIONS[state.index]) ? "figural" : "verbal"} tasks`;
+  moodTaskElapsed = null;
+  resetMoodSelections();
+  showScreen("mood");
+}
+
+function showBaselineMoodScreen(){
+  moodMode = "pre";
+  applyMoodCopy("pre");
+  moodQuestionId = "baseline";
+  moodTaskText = "Baseline (before starting)";
+  moodTaskElapsed = null;
+  resetMoodSelections();
+  showScreen("mood");
+}
+
+moodContinueBtn.onclick = async () => {
+  if (moodContinueBtn.disabled) return;
+  moodContinueBtn.disabled = true; // avoid double-submitting the rating
+  await sendMoodEntry();
+
+  if (moodMode === "pre") {
+    state.baselineMoodShown = true;
+    saveState();
+    initApp();
+    return;
+  }
+
+  if (pendingAdvanceAction === "finish") {
+    finishTasks();
+  } else {
+    state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
+    saveState();
+    render();
+  }
+  pendingAdvanceAction = null;
+};
 
 function initApp() {
   preloadFiguralImages();
@@ -478,11 +786,13 @@ addBtn.onclick = async () => {
   state.data[id].push("");
   state.feedbackGiven[id].push(false);
   state.feedbackText[id].push("");
+  state.feedbackScore[id].push(null);
   state.sent[id].push(false);
   saveState();
   addAnswerRow(state.data[id].length - 1, "");
   updateNextButton();
   updateAddButton();
+  answersWrap.lastElementChild.querySelector("input").focus();
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 };
 
@@ -490,7 +800,12 @@ function startTimer(){
   if (timerId) return;
   timerId = setInterval(() => {
     if (timeUp) { renderTime(); return; }
+    // Only count down while the task itself is on screen, so reading the
+    // instructions or answering the check-in doesn't use up task time.
+    if (currentScreen !== "task") return;
     duration -= 1;
+    if (duration === 60) announce("1 minute left.");
+    if (duration === 30) announce("30 seconds left.");
     if (duration <= 0) {
       duration = 0;
       onTimeUp();
@@ -502,7 +817,7 @@ function startTimer(){
 function resetTimerForQuestion(){
   if (timerQuestionIndex === state.index) return;
   timerQuestionIndex = state.index;
-  duration = 3 * 60;
+  duration = TASK_SECONDS;
   timeUp = false;
   drawingLocked = false;
   timeUpMsg.style.display = "none";
@@ -514,6 +829,20 @@ function renderTime(){
   const m = String(Math.floor(duration/60)).padStart(2,"0");
   const s = String(duration%60).padStart(2,"0");
   timerEl.textContent = `${m}:${s}`;
+}
+
+// Seconds elapsed on the current task so far (time completion for logging).
+function elapsedSeconds(){
+  return Math.max(0, TASK_SECONDS - duration);
+}
+
+// Shown to group B as "Originality: 2.6 out of 5". Text scores (OpenScoring)
+// are already 1-5; drawing scores (OCSAI-D) are 0-1 and are mapped onto 1-5
+// so both look the same. The CSV keeps the raw score.
+function originalityLabel(value, isDrawing){
+  let v = Number(value);
+  if (isDrawing) v = 1 + 4 * Math.min(1, Math.max(0, v));
+  return `Originality: ${v.toFixed(1)} out of 5`;
 }
 
 function formatScore(value){
@@ -528,22 +857,42 @@ function onTimeUp(){
   timeUpMsg.style.display = "inline";
   lockInputs();
   updateNextButton();
+  announce("Time is up.");
   autoAdvanceAfterTimeUp();
 }
 
+// When time runs out, go through the same post-task check-in as "Next Task"
+// (also on the last task, which previously could leave participants stuck).
 function autoAdvanceAfterTimeUp(){
   if (autoAdvanceTimer) return;
   const startIndex = state.index;
-  autoAdvanceTimer = setTimeout(async () => {
+  autoAdvanceTimer = setTimeout(() => {
     autoAdvanceTimer = null;
-    if (!timeUp) return;
-    if (state.index !== startIndex) return;
-    if (state.index >= QUESTIONS.length - 1) return;
+    if (!timeUp || currentScreen !== "task" || state.index !== startIndex) return;
+    finishCurrentTask();
+  }, 1500);
+}
+
+let leavingTask = false;
+async function finishCurrentTask(){
+  if (leavingTask) return;
+  leavingTask = true;
+  try {
     await flushUnsynced();
-    state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
-    saveState();
-    render();
-  }, 600);
+    // Check-in only at the end of each half (verbal / figural), not after every task.
+    const last = state.index === QUESTIONS.length - 1;
+    const endOfHalf = last || isDrawingTask(QUESTIONS[state.index]) !== isDrawingTask(QUESTIONS[state.index + 1]);
+    if (endOfHalf) {
+      pendingAdvanceAction = last ? "finish" : "next";
+      showMoodScreen();
+    } else {
+      state.index += 1;
+      saveState();
+      render();
+    }
+  } finally {
+    leavingTask = false;
+  }
 }
 
 function loadState(){
@@ -584,12 +933,16 @@ function ensureArraysFor(id){
   if (!state.data[id]) state.data[id] = [];
   if (!state.feedbackGiven[id]) state.feedbackGiven[id] = [];
   if (!state.feedbackText[id]) state.feedbackText[id] = [];
+  if (!state.feedbackScore[id]) state.feedbackScore[id] = [];
   if (!state.sent[id]) state.sent[id] = [];
   while (state.feedbackGiven[id].length < state.data[id].length) {
     state.feedbackGiven[id].push(false);
   }
   while (state.feedbackText[id].length < state.data[id].length) {
     state.feedbackText[id].push("");
+  }
+  while (state.feedbackScore[id].length < state.data[id].length) {
+    state.feedbackScore[id].push(null);
   }
   while (state.sent[id].length < state.data[id].length) {
     state.sent[id].push(false);
@@ -599,10 +952,14 @@ function ensureArraysFor(id){
 function ensureDrawingState(id){
   if (!state.drawingData) state.drawingData = {};
   if (!state.drawingScore) state.drawingScore = {};
+  if (!state.drawingRawScore) state.drawingRawScore = {};
   if (!state.drawingSubmitted) state.drawingSubmitted = {};
   if (!state.drawingHasInk) state.drawingHasInk = {};
+  if (!state.drawingCount) state.drawingCount = {};
+  if (!state.drawingCount[id]) state.drawingCount[id] = 0;
   if (!state.drawingData[id]) state.drawingData[id] = null;
   if (!state.drawingScore[id]) state.drawingScore[id] = "";
+  if (state.drawingRawScore[id] === undefined) state.drawingRawScore[id] = null;
   if (!state.drawingSubmitted[id]) state.drawingSubmitted[id] = false;
   if (state.drawingHasInk[id] === undefined) state.drawingHasInk[id] = !!state.drawingData[id];
 }
@@ -615,6 +972,15 @@ function render(){
   resetTimerForQuestion();
   const q = QUESTIONS[state.index];
   const drawingTask = isDrawingTask(q);
+
+  // Show the verbal/figural instructions before the first task of each kind;
+  // "Start" on that screen calls render() again.
+  const introMode = getInitialInstructionMode();
+  if (introMode) {
+    showInstructionScreen(introMode);
+    return;
+  }
+
   if (drawingTask) {
     ensureDrawingState(q.id);
   } else {
@@ -622,8 +988,9 @@ function render(){
   }
 
   promptTitleEl.textContent = q.title || q.text;
-  promptInstructionEl.textContent = q.instruction || "Think of as many uses as you can.";
-  progressEl.textContent = `Task ${state.index+1} of ${QUESTIONS.length}`;
+  promptInstructionEl.textContent = q.instruction || VERBAL_INSTRUCTION;
+  // Must be visible before the canvas is sized for drawing tasks.
+  showScreen("task");
 
   if (drawingTask) {
     answersWrap.style.display = "none";
@@ -632,7 +999,7 @@ function render(){
     renderDrawing();
   } else {
     drawingSection.style.display = "none";
-    answersWrap.style.display = "block";
+    answersWrap.style.display = "";
     addBar.style.display = "flex";
     answersWrap.innerHTML = "";
     const arr = state.data[q.id];
@@ -651,12 +1018,6 @@ function render(){
   updateNextButton();
   updateAddButton();
   saveState();
-
-  if (drawingTask) {
-    if (!state.figuralIntroShown) showInstructionScreen("figural");
-  } else {
-    if (!state.verbalIntroShown) showInstructionScreen("verbal");
-  }
 }
 
 function setupCanvas(){
@@ -757,6 +1118,7 @@ function saveDrawingState(id){
   state.drawingData[id] = drawCanvas.toDataURL("image/png");
   state.drawingSubmitted[id] = false;
   state.drawingScore[id] = "";
+  state.drawingRawScore[id] = null;
   drawingScoreEl.textContent = "";
   drawingStatusEl.textContent = "";
   saveState();
@@ -768,9 +1130,21 @@ function renderDrawing(){
   ensureDrawingState(id);
   setupCanvas();
   loadDrawingFromState(id);
-  drawingScoreEl.textContent = state.group === "A" ? "" : (state.drawingScore[id] || "");
-  drawingStatusEl.textContent = state.drawingSubmitted[id] ? "Submitted" : "";
+  showDrawingResult(state.group === "A" ? "" : (state.drawingScore[id] || ""));
+  drawingStatusEl.textContent = state.drawingSubmitted[id] ? SUBMITTED_HINT : "";
   updateDrawingControls();
+}
+
+const SUBMITTED_HINT = "Submitted. Click “New Drawing” to draw another.";
+
+// After a drawing is submitted it is locked; "Clear" becomes "New Drawing".
+function updateDrawingCount(){
+  const id = currentId();
+  if (!isDrawingTask(QUESTIONS[state.index])) return;
+  const n = state.drawingCount[id] || 0;
+  document.getElementById("drawingCount").textContent =
+    `Drawings submitted: ${n}. ${n < MIN_ANSWERS ? `Submit at least ${MIN_ANSWERS} to move on.` : "You can move on, or keep drawing until time’s up."}`;
+  document.getElementById("clearDrawingLabel").textContent = state.drawingSubmitted[id] ? "New Drawing" : "Clear";
 }
 
 function getCanvasPos(e){
@@ -782,6 +1156,7 @@ drawCanvas.addEventListener("pointerdown", (e) => {
   if (drawingLocked || drawingBgLoading || timeUp) return;
   const q = QUESTIONS[state.index];
   if (!isDrawingTask(q)) return;
+  if (state.drawingSubmitted[q.id]) { announce(SUBMITTED_HINT); return; }
   drawingActive = true;
   const pos = getCanvasPos(e);
   drawingCtx.beginPath();
@@ -820,6 +1195,7 @@ clearDrawingBtn.onclick = () => {
   state.drawingData[id] = null;
   state.drawingSubmitted[id] = false;
   state.drawingScore[id] = "";
+  state.drawingRawScore[id] = null;
   state.drawingHasInk[id] = false;
   drawingScoreEl.textContent = "";
   drawingStatusEl.textContent = "";
@@ -827,78 +1203,124 @@ clearDrawingBtn.onclick = () => {
   updateNextButton();
 };
 
+async function requestDrawingScore(dataUrl){
+  const response = await fetch(DRAW_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: dataUrl })
+  });
+  if (!response.ok) throw new Error("Server error");
+  const data = await response.json();
+  const score = formatScore(data.score);
+  if (score === null) throw new Error("No score in response");
+  return score;
+}
+
 submitDrawingBtn.onclick = async () => {
   if (timeUp) return;
-  const id = currentId();
-  if (!isDrawingTask(QUESTIONS[state.index])) return;
+  const q = QUESTIONS[state.index];
+  const id = q.id;
+  if (!isDrawingTask(q)) return;
   if (!state.drawingHasInk || !state.drawingHasInk[id]) {
     drawingStatusEl.textContent = "Please draw something before submitting.";
     drawingScoreEl.textContent = "";
+    announce("Please draw something before submitting.");
     return;
   }
   if (state.group === "A") {
     // Control group: allow submit but do not score or show feedback.
     state.drawingSubmitted[id] = true;
     state.drawingScore[id] = "";
+    state.drawingRawScore[id] = null;
     drawingScoreEl.textContent = "";
-    drawingStatusEl.textContent = "Submitted";
+    state.drawingCount[id] += 1;
+    drawingStatusEl.textContent = SUBMITTED_HINT;
+    announce(`Drawing ${state.drawingCount[id]} submitted.`);
     saveState();
     updateNextButton();
+    await sendEntry(id, q.text, "[drawing submitted]", null, null, elapsedSeconds(), "drawing", drawCanvas.toDataURL("image/png"));
     return;
   }
+
+  // Group B sees the originality score; groups C–E see AI feedback on the
+  // drawing (same as for their verbal answers). Every drawing is still
+  // scored so the score is logged for all feedback groups.
+  const aiFeedback = state.group !== "B";
   submitDrawingBtn.disabled = true;
-  drawingStatusEl.textContent = "Scoring...";
+  drawingStatusEl.textContent = aiFeedback ? "Getting feedback…" : "Scoring…";
   drawingScoreEl.textContent = "";
-  try {
-    const dataUrl = drawCanvas.toDataURL("image/png");
-    const response = await fetch(DRAW_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: dataUrl })
-    });
-    if (!response.ok) throw new Error("Server error");
-    const data = await response.json();
-    const score = data.score;
-    if (score !== undefined) {
-      const rounded = formatScore(score);
-      drawingScoreEl.textContent = rounded === null ? `Score: ${score}` : `Score: ${rounded}`;
-    } else {
-      drawingScoreEl.textContent = JSON.stringify(data);
-    }
-    state.drawingScore[id] = drawingScoreEl.textContent;
-    state.drawingSubmitted[id] = true;
-    drawingStatusEl.textContent = "Submitted";
-  } catch (err) {
-    console.error(err);
-    drawingStatusEl.textContent = "Error submitting drawing.";
-    drawingScoreEl.textContent = "";
-    state.drawingSubmitted[id] = false;
-  } finally {
-    submitDrawingBtn.disabled = false;
-    saveState();
+  announce(aiFeedback ? "Getting feedback, please wait." : "Scoring, please wait.");
+  const dataUrl = drawCanvas.toDataURL("image/png");
+  const [scoreResult, feedbackResult] = await Promise.allSettled([
+    requestDrawingScore(dataUrl),
+    aiFeedback ? requestLlmFeedback({ question: q.text, image: dataUrl, figure: q.file }) : null
+  ]);
+  const rawScore = scoreResult.status === "fulfilled" ? scoreResult.value : null;
+  let failed, shown, stored;
+  if (aiFeedback) {
+    failed = feedbackResult.status === "rejected" || !feedbackResult.value.feedback;
+    shown = failed ? DRAWING_ERROR_MSG : feedbackResult.value.feedback;
+    stored = failed ? FEEDBACK_ERROR_LOG : shown;
+  } else {
+    failed = rawScore === null;
+    shown = failed ? DRAWING_ERROR_MSG : originalityLabel(rawScore, true);
+    stored = failed ? FEEDBACK_ERROR_LOG : null;
+  }
+  if (failed) console.error("Drawing feedback failed", scoreResult.reason, feedbackResult && feedbackResult.reason);
+
+  state.drawingScore[id] = shown;
+  state.drawingRawScore[id] = rawScore;
+  // Count it as submitted even if feedback failed, so nobody gets stuck.
+  state.drawingSubmitted[id] = true;
+  state.drawingCount[id] += 1;
+  saveState();
+  if (currentId() === id) {
+    showDrawingResult(shown);
+    drawingStatusEl.textContent = SUBMITTED_HINT;
+    announce(`Drawing ${state.drawingCount[id]} submitted. ${shown}`);
+    updateDrawingControls();
     updateNextButton();
   }
+  await sendEntry(id, q.text, "[drawing submitted]", stored, rawScore, elapsedSeconds(), "drawing", dataUrl);
 };
+
+function showDrawingResult(text){
+  drawingScoreEl.textContent = text;
+  drawingScoreEl.classList.toggle("is-error", text === DRAWING_ERROR_MSG);
+}
 
 function addAnswerRow(i, value=""){
   const row = document.createElement("div");
   row.className = "row";
 
+  const qid = currentId();
+  const q = QUESTIONS[state.index];
+  const fbId = `feedback-${qid}-${i}`;
+
+  const num = document.createElement("span");
+  num.className = "idea-num";
+  num.setAttribute("aria-hidden", "true");
+  num.textContent = String(i + 1);
+  row.appendChild(num);
+
   // 1. Input Field
   const input = document.createElement("input");
   input.type = "text";
-  input.placeholder = `Idea ${i+1}`;
+  input.className = "field";
+  input.placeholder = "Type your idea…";
+  input.name = `idea_${i + 1}`;
+  input.autocomplete = "off"; // shared lab computers: don't suggest earlier participants' answers
+  input.setAttribute("aria-label", `Idea ${i+1}`);
   input.value = value;
   input.disabled = timeUp;
   input.oninput = () => {
-    const id = currentId();
-    state.data[id][i] = input.value;
-    state.sent[id][i] = false;
+    state.data[qid][i] = input.value;
+    state.sent[qid][i] = false;
     if (state.group !== 'A') {
-      state.feedbackGiven[id][i] = false; 
-      state.feedbackText[id][i] = "";
-      const fbBox = row.querySelector('.feedback');
-      if(fbBox) fbBox.textContent = "";
+      state.feedbackGiven[qid][i] = false;
+      state.feedbackText[qid][i] = "";
+      state.feedbackScore[qid][i] = null;
+      fbWrap.textContent = "";
     }
     saveState();
     updateNextButton();
@@ -910,21 +1332,54 @@ function addAnswerRow(i, value=""){
   // 2. Feedback Button & Box
   const btnWrap = document.createElement("div");
   btnWrap.className = "fb-btn-wrapper";
-  
+
   const fbBtn = document.createElement("button");
   fbBtn.className = "btn";
   fbBtn.textContent = "Get Feedback";
-  
+  fbBtn.setAttribute("aria-label", `Get feedback on idea ${i+1}`);
+
   const fbWrap = document.createElement("div");
-  fbWrap.className = "feedback-wrapper feedback"; 
+  fbWrap.className = "feedback-wrapper feedback";
+  fbWrap.id = fbId;
+  if (state.group !== "A") input.setAttribute("aria-describedby", fbId);
 
   // Check if previously given
-  if (state.feedbackGiven[currentId()][i] === true) {
+  if (state.feedbackGiven[qid][i] === true) {
      fbWrap.textContent = "(Feedback received)";
-     fbWrap.style.color = "#888";
+     fbWrap.classList.add("is-muted");
   }
 
-  // --- BUTTON CLICK HANDLER (UPDATED FOR BACKEND) ---
+  function showFeedback(text, isError){
+    fbWrap.textContent = text;
+    fbWrap.classList.remove("is-muted");
+    fbWrap.classList.toggle("is-error", isError);
+    announce(`Feedback on idea ${i+1}: ${text}`);
+  }
+
+  // Record the result for this answer. On failure the error marker is stored
+  // and the answer still counts as "feedback given", so "Add another answer"
+  // unlocks instead of leaving the participant stuck.
+  function recordFeedback(logId, text, scoreValue, isError){
+    state.feedbackGiven[qid][i] = true;
+    state.feedbackText[qid][i] = isError ? FEEDBACK_ERROR_LOG : text;
+    state.feedbackScore[qid][i] = Number.isFinite(scoreValue) ? scoreValue : null;
+    updateLog(logId, {
+      feedbackText: isError ? FEEDBACK_ERROR_LOG : text,
+      receivedAt: new Date().toISOString(),
+      ...(isError ? { error: true } : {})
+    });
+  }
+
+  // Not a meaningful answer: no feedback, doesn't count, and the participant
+  // is told to change it. The attempt is still logged (flag in "feedback").
+  function rejectAnswer(logId, data){
+    showFeedback(data.message, true);
+    state.feedbackGiven[qid][i] = false;
+    state.feedbackText[qid][i] = data.flag;
+    state.feedbackScore[qid][i] = null;
+    updateLog(logId, { feedbackText: data.flag, receivedAt: new Date().toISOString(), nonsense: true });
+  }
+
   fbBtn.onclick = async () => {
     const txt = input.value.trim();
     if (!txt) { alert("Please write an idea first."); return; }
@@ -938,115 +1393,62 @@ function addAnswerRow(i, value=""){
       pressedAt
     });
 
-    // LOGIC FOR GROUP B: FETCH FROM BACKEND
-    if (state.group === 'B') {
-      fbWrap.textContent = "Scoring..."; // Loading state
-      
-      try {
+    fbWrap.textContent = state.group === 'B' ? "Scoring…" : "Loading…";
+    fbWrap.classList.remove("is-error");
+    fbWrap.classList.add("is-muted");
+    announce("Getting feedback, please wait.");
+    try {
+      if (state.group === 'B') {
+        // Group B: originality score from the scoring server
         const response = await fetch(SCORE_URL, {
-    method: 'POST',
-    mode: 'cors', // Explicitly tell the browser to use CORS
-    headers: { 
-      'Content-Type': 'text/plain' // Keep this to avoid preflight if possible
-    }, 
-    body: JSON.stringify({ item: currentId(), answer: txt })
-  });
-
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' }, // avoids a CORS preflight
+          body: JSON.stringify({ item: qid, answer: txt })
+        });
         if (!response.ok) throw new Error("Server error");
-
         const data = await response.json();
-        
-        // Handle response. Depending on your backend, 
-        // the score/feedback might be in a different key.
-        // Assuming data is: { "feedback": "...", "score": ... } or similar.
-        // If data IS the string, use data directly.
-        // Below I check for common keys or fallback to JSON string.
+        if (data.nonsense) { rejectAnswer(logId, data); return; }
+
         let displayMsg = "";
-        
+        let scoreValue = null;
         if (typeof data === 'number' || (typeof data === 'string' && data.trim() !== "" && !Number.isNaN(Number(data)))) {
             const rounded = formatScore(data);
-            displayMsg = rounded === null ? String(data) : `Score: ${rounded}`;
+            scoreValue = rounded === null ? Number(data) : rounded;
+            displayMsg = rounded === null ? String(data) : originalityLabel(rounded, false);
         } else if (typeof data === 'string') {
             displayMsg = data;
-        } else if (data.originality !== undefined) {
+        } else if (data.originality !== undefined && data.originality !== null) {
             const rounded = formatScore(data.originality);
-            displayMsg = rounded === null ? `Score: ${data.originality}` : `Score: ${rounded}`;
+            scoreValue = rounded === null ? Number(data.originality) : rounded;
+            displayMsg = rounded === null ? `Score: ${data.originality}` : originalityLabel(rounded, false);
         } else if (data.score !== undefined) {
             const rounded = formatScore(data.score);
-            displayMsg = rounded === null ? `Score: ${data.score}` : `Score: ${rounded}`;
+            scoreValue = rounded === null ? Number(data.score) : rounded;
+            displayMsg = rounded === null ? `Score: ${data.score}` : originalityLabel(rounded, false);
         } else if (data.feedback) {
             displayMsg = data.feedback;
         } else {
-            // Fallback if structure is unknown
-            displayMsg = JSON.stringify(data); 
+            throw new Error("Unexpected scoring response");
         }
-
-        fbWrap.textContent = displayMsg;
-        fbWrap.style.color = "#444";
-        state.feedbackGiven[currentId()][i] = true;
-        state.feedbackText[currentId()][i] = displayMsg;
-        updateLog(logId, {
-          feedbackText: displayMsg,
-          receivedAt: new Date().toISOString()
-        });
-
-      } catch (err) {
-        console.error(err);
-        fbWrap.textContent = "Error: Could not connect to scoring server.";
-        fbWrap.style.color = "#b00020";
-        updateLog(logId, {
-          feedbackText: "Error: Could not connect to scoring server.",
-          receivedAt: new Date().toISOString(),
-          error: true
-        });
-      } finally {
-        fbBtn.disabled = false;
-        saveState();
-        updateNextButton();
-        updateAddButton();
+        showFeedback(displayMsg, false);
+        recordFeedback(logId, displayMsg, scoreValue, false);
+      } else {
+        // Groups C, D, E: AI feedback
+        const data = await requestLlmFeedback({ question: q.text, answer: txt });
+        if (data.nonsense) { rejectAnswer(logId, data); return; }
+        const msg = data.feedback;
+        showFeedback(msg, false);
+        recordFeedback(logId, msg, null, false);
       }
-    } 
-    
-    // LOGIC FOR GROUPS C, D, E (Backend via Gemini)
-    else {
-      fbWrap.textContent = "Loading...";
-      fbWrap.style.color = "#444";
-      try {
-        const response = await fetch("/feedback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: state.userId,
-            question: QUESTIONS[state.index].text,
-            answer: txt
-          })
-        });
-        if (!response.ok) throw new Error("Server error");
-        const data = await response.json();
-        const msg = data.feedback || JSON.stringify(data);
-        fbWrap.textContent = msg;
-        fbWrap.style.color = "#444";
-        state.feedbackGiven[currentId()][i] = true;
-        state.feedbackText[currentId()][i] = msg;
-        updateLog(logId, {
-          feedbackText: msg,
-          receivedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error(err);
-        fbWrap.textContent = "Error: Could not fetch feedback.";
-        fbWrap.style.color = "#b00020";
-        updateLog(logId, {
-          feedbackText: "Error: Could not fetch feedback.",
-          receivedAt: new Date().toISOString(),
-          error: true
-        });
-      } finally {
-        fbBtn.disabled = false;
-        saveState();
-        updateNextButton();
-        updateAddButton();
-      }
+    } catch (err) {
+      console.error(err);
+      showFeedback(FEEDBACK_ERROR_MSG, true);
+      recordFeedback(logId, null, null, true);
+    } finally {
+      fbBtn.disabled = false;
+      saveState();
+      updateNextButton();
+      updateAddButton();
     }
   };
 
@@ -1057,36 +1459,80 @@ function addAnswerRow(i, value=""){
   answersWrap.appendChild(row);
 }
 
-async function sendEntry(questionId, questionText, answerText, feedbackText) {
-  try {
-    await fetch("/store", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: state.userId,
-        time: new Date().toISOString(),
-        question: questionText,
-        answer: answerText,
-        feedback: feedbackText || null
-      })
-    });
-  } catch (err) {
-    console.error("Failed to store entry", err);
+// AI feedback for groups C–E. `payload` has `question` plus either `answer`
+// (verbal) or `image` + `figure` (figural drawing).
+async function requestLlmFeedback(payload){
+  const response = await fetch("/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: state.userId, ...payload })
+  });
+  if (!response.ok) throw new Error("Server error");
+  const data = await response.json();
+  if (!data.feedback && !data.nonsense) throw new Error("Empty feedback");
+  return data; // { feedback } or { nonsense, message, flag }
+}
+
+// Save one row to the server's CSV (drawing rows also carry the PNG, which
+// the server stores under data/drawings/). Retries a few times so a brief
+// network blip doesn't lose data; returns whether the row was saved.
+async function sendEntry(questionId, questionText, answerText, feedbackText, score, durationSeconds, type, image) {
+  const body = JSON.stringify({
+    user_id: state.userId,
+    time: new Date().toISOString(),
+    question: questionText,
+    answer: answerText,
+    feedback: feedbackText || null,
+    score: (score === undefined || score === null) ? null : score,
+    duration_seconds: (durationSeconds === undefined || durationSeconds === null) ? null : durationSeconds,
+    type: type || "answer",
+    token: state.token,
+    ...(image ? { image } : {})
+  });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch("/store", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+      });
+      if (response.ok) return true;
+      if (response.status < 500) {
+        console.error("Entry rejected", response.status, await response.text());
+        return false; // bad data: retrying won't help
+      }
+    } catch (err) {
+      console.error("Failed to store entry", err);
+    }
+    if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
   }
+  return false;
 }
 
 async function flushUnsynced() {
   const q = QUESTIONS[state.index];
-  if (isDrawingTask(q)) return;
   const id = q.id;
+  if (isDrawingTask(q)) {
+    // Time ran out with a drawing that was never submitted (or was changed
+    // after submitting): save that final version too.
+    ensureDrawingState(id);
+    if (state.drawingHasInk[id] && !state.drawingSubmitted[id]) {
+      await sendEntry(id, q.text, "[drawing not submitted]", null, null, elapsedSeconds(), "drawing_unsubmitted", drawCanvas.toDataURL("image/png"));
+    }
+    return;
+  }
   ensureArraysFor(id);
+  const elapsed = elapsedSeconds();
   for (let i = 0; i < state.data[id].length; i++) {
     const answerText = (state.data[id][i] || "").trim();
     if (!answerText) continue;
     if (state.sent[id][i]) continue;
     const feedbackText = state.group === "A" ? null : state.feedbackText[id][i];
-    await sendEntry(id, q.text, answerText, feedbackText);
-    state.sent[id][i] = true;
+    const scoreValue = state.group === "A" ? null : state.feedbackScore[id][i];
+    // Only mark as sent once the server has it, so a failed save is retried later.
+    if (await sendEntry(id, q.text, answerText, feedbackText, scoreValue, elapsed, "answer")) {
+      state.sent[id][i] = true;
+    }
   }
   saveState();
 }
@@ -1097,18 +1543,64 @@ function canMoveOn(){
   const id = currentId();
   if (isDrawingTask(q)) {
     ensureDrawingState(id);
-    return state.drawingSubmitted[id] === true;
+    return state.drawingCount[id] >= MIN_ANSWERS;
   }
+  return countedAnswers(id) >= MIN_ANSWERS;
+}
+
+// Same quick checks as the server (see looks_like_gibberish in app.py). The
+// control group gets no feedback, so this is the only check for them.
+const FILLER_ANSWERS = ["idk", "dont know", "don't know", "i dont know", "i don't know", "nothing", "none", "no idea",
+  "na", "n/a", "asdf", "qwerty", "test", "abc", "blah", "lol", "whatever", "something", "stuff"];
+function looksLikeGibberish(answer){
+  const text = answer.trim().toLowerCase();
+  const letters = text.replace(/[^a-z]/g, "");
+  if (letters.length < 2 || FILLER_ANSWERS.includes(text.replace(/^[ .!?]+|[ .!?]+$/g, ""))) return true;
+  if (new Set(letters).size <= 2 && letters.length >= 4) return true;
+  const words = text.match(/[a-z]+/g) || [];
+  const rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+  const keyMash = (w) => w.length >= 4 && rows.some(r => r.includes(w) || r.includes([...w].reverse().join("")));
+  if (words.every(keyMash)) return true;
+  return words.every(w => w.length >= 4 && !/[aeiouy]/.test(w));
+}
+
+// Does answer i count? Feedback groups: it got feedback (nonsense answers
+// don't). Control group: it passes the quick gibberish check.
+function answerCounts(id, i){
+  const text = (state.data[id][i] || "").trim();
+  if (!text) return false;
+  return state.group === "A" ? !looksLikeGibberish(text) : state.feedbackGiven[id][i] === true;
+}
+
+function countedAnswers(id){
   ensureArraysFor(id);
-  const answers = state.data[id];
-  if (answers.length === 0) return false;
-  return answers.some(t => (t || "").trim().length > 0);
+  return state.data[id].filter((_, i) => answerCounts(id, i)).length;
 }
 
 function updateNextButton(){
   const last = state.index === QUESTIONS.length - 1;
   nextBtn.disabled = !canMoveOn();
   nextBtn.textContent = last ? "Finish" : "Next Task";
+  updateAnswerHint();
+  updateDrawingCount();
+}
+
+function updateAnswerHint(){
+  const q = QUESTIONS[state.index];
+  if (isDrawingTask(q)) return;
+  const id = q.id;
+  const n = countedAnswers(id);
+  const lastIdx = state.data[id].length - 1;
+  const lastText = (state.data[id][lastIdx] || "").trim();
+  let hint = `Answers so far: ${n}. ` + (n < MIN_ANSWERS
+    ? `Give at least ${MIN_ANSWERS} to move on.`
+    : "You can move on, or keep adding ideas until time’s up.");
+  if (state.group === "A") {
+    if (lastText && looksLikeGibberish(lastText)) hint = "That doesn’t look like a real use for the object. Please change it to a meaningful answer. " + hint;
+  } else if (lastText && !state.feedbackGiven[id][lastIdx]) {
+    hint = "Get feedback before adding another answer. " + hint;
+  }
+  document.getElementById("validationHint").textContent = hint;
 }
 
 function canAddAnother(){
@@ -1121,8 +1613,7 @@ function canAddAnother(){
   const lastIdx = answers.length - 1;
   const lastText = (answers[lastIdx] || "").trim();
   if (!lastText) return false;
-  if (state.group === 'A') return true;
-  return state.feedbackGiven[id][lastIdx] === true;
+  return answerCounts(id, lastIdx);
 }
 
 function updateAddButton(){
@@ -1139,27 +1630,22 @@ function lockInputs(){
   updateNextButton();
 }
 
-function openFinishModal(){
-  if (!finishModal) return;
-  finishModal.style.display = "flex";
-  finishModal.setAttribute("aria-hidden", "false");
-}
-
-function closeFinishModal(){
-  if (!finishModal) return;
-  finishModal.style.display = "none";
-  finishModal.setAttribute("aria-hidden", "true");
-}
-
+// Replaces the old "All Done" popup: a full page, so closing nothing leaves a blank screen.
 function finishTasks(){
   lockInputs();
-  nextBtn.disabled = true;
-  nextBtn.textContent = "Finished";
   timeUp = true;
-  duration = 0;
-  renderTime();
-  openFinishModal();
+  state.finished = true;
+  saveState();
+  showScreen("done");
 }
+
+// Ask before closing or reloading the tab in the middle of the tasks.
+window.addEventListener("beforeunload", (e) => {
+  if (currentScreen && currentScreen !== "done") {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
 
 // Nav
 prevBtn.onclick = () => {
@@ -1167,33 +1653,8 @@ prevBtn.onclick = () => {
 };
 nextBtn.onclick = async () => {
   if (nextBtn.disabled) return;
-  if (state.index === QUESTIONS.length - 1) {
-    await flushUnsynced();
-    finishTasks();
-    return;
-  }
-  await flushUnsynced();
-  state.index = Math.min(QUESTIONS.length - 1, state.index + 1);
-  saveState();
-  render();
+  await finishCurrentTask();
 };
-
-if (finishCloseBtn) finishCloseBtn.addEventListener("click", closeFinishModal);
-if (finishModal) {
-  finishModal.addEventListener("click", (e) => {
-    if (e.target === finishModal) closeFinishModal();
-  });
-}
-if (finishPostBtn) {
-  finishPostBtn.addEventListener("click", () => {
-    window.open(POST_SURVEY_URL, "_blank", "noopener");
-  });
-}
-if (finishHomeBtn) {
-  finishHomeBtn.addEventListener("click", () => {
-    window.location.href = "/";
-  });
-}
 
 </script>
 </body>

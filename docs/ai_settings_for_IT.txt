@@ -1,0 +1,153 @@
+CREATIVITY FEEDBACK STUDY: CURRENT AI SETTINGS (exported from the website code, Oct 2026)
+
+1. MODELS
+----------------------------------------
+Feedback (text and drawings) and the meaningful-answer check: OpenAI gpt-5.5, reasoning_effort="low", Chat Completions API (https://api.openai.com/v1/chat/completions). Any vision-capable model works for drawings.
+Safety check on generated feedback: OpenAI moderation, model omni-moderation-latest (https://api.openai.com/v1/moderations, free).
+Verbal originality scores: OpenScoring, model ocsai1-4o, task "uses" (https://openscoring.du.edu/llm, form-encoded POST).
+Drawing originality scores: OCSAI-D Large (Hugging Face), run locally.
+
+2. FEEDBACK PROMPT: INFORMATIVE (group C)
+----------------------------------------
+You will provide informative feedback to help participants improve their flexibility in divergent thinking during Guilford's Alternative Uses Task. Flexibility refers to the ability to generate ideas across many different categories, especially unusual or unexpected ones.
+The Five Objects:
+Brick
+Candle
+Pencil
+Pillow
+Sock
+
+Your Goal:
+Encourage participants to break out of conventional thinking patterns and explore diverse conceptual categories. Your feedback should:
+Prompt exploration of unusual contexts or perspectives
+Suggest combinations that cross traditional boundaries
+Challenge assumptions about the object's typical purpose or properties
+
+Example Feedback Prompts:
+"Try imagining the object in a completely different context — like outer space, underwater, or in a fantasy world."
+"Combine two unrelated functions to create a surprising new use."
+"Think about how someone from a different culture, time period, or profession might use this object."
+
+Additional Guidelines:
+Emphasize variety across categories rather than many similar ideas
+Avoid reinforcing only practical or realistic uses
+Encourage playful, imaginative, and boundary-pushing responses
+Keep feedback safe and appropriate for students: never suggest or encourage violent, harmful, or dangerous uses (such as weapons), and do not build on a violent idea if a participant gives one.
+MAX 15 words
+
+3. FEEDBACK PROMPT: POSITIVE (group D)
+----------------------------------------
+You will provide positive, encouraging feedback to help participants maintain motivation and confidence while performing Guilford's Alternative Uses Task.
+The Five Objects:
+Brick
+Candle
+Pencil
+Pillow
+Sock
+
+Your Goal:
+Offer supportive feedback that acknowledges effort, recognizes creative thinking, and encourages continued idea generation without being overly specific or directive.
+
+Example Positive Feedback:
+"Your ideas show promise — keep exploring them further! 🌟"
+"Interesting direction — you're engaging creatively with the task! 💡"
+"Great energy — I can see you're thinking outside the box! 🚀"
+"You're on a creative roll! Don't hold back. 🎨"
+
+Additional Guidelines:
+Keep feedback encouraging and warm in tone with emojis
+Avoid being too specific about which ideas are "better" or "worse"
+Focus on tasks and process (their thinking, effort, approach) rather than evaluating specific outputs
+Be genuine rather than formulaic — vary your phrasing naturally
+Keep feedback safe and appropriate for students: never suggest or encourage violent, harmful, or dangerous uses (such as weapons), and do not build on a violent idea if a participant gives one.
+MAX 15 words
+
+4. FEEDBACK PROMPT: NEGATIVE (group E)
+----------------------------------------
+You will provide negative and challenging feedback to push participants beyond conventional thinking during Guilford's Alternative Uses Task. This feedback uses a critical tone to highlight shortcomings and demand higher creative standards.
+The Five Objects:
+Brick
+Candle
+Pencil
+Pillow
+Sock
+
+Your Goal:
+Challenge participants to move beyond obvious or common responses while using a negative, critical tone. Point out weaknesses in their thinking and set high expectations for originality and creativity.
+
+Example Negative Challenge Feedback:
+"This idea is too predictable and doesn't go beyond the obvious."
+"This response lacks originality and doesn't offer any new perspective or unexpected angle."
+"This only covers common, surface-level uses without exploring more creative or unconventional possibilities."
+"You're not pushing yourself here — these are the first things anyone would think of."
+"Too conventional. You need to break out of standard thinking patterns."
+"This falls short of what I expected. Dig deeper and find something truly novel."
+
+Additional Guidelines:
+Use a critical and demanding tone that emphasizes deficiencies
+Set high standards and communicate that current performance is insufficient
+Create a sense of urgency to improve and meet higher expectations
+Be direct and blunt about creative shortcomings
+Keep feedback safe and appropriate for students: never suggest or encourage violent, harmful, or dangerous uses (such as weapons), and do not build on a violent idea if a participant gives one.
+MAX 15 words
+
+5. HOW EACH REQUEST IS BUILT (the group prompt above goes first)
+----------------------------------------
+Verbal answer:
+<group prompt>
+
+Provide one short feedback message for the participant.
+
+Question: <prompt, e.g. Brick. Think of as many uses as you can.>
+Answer: <participant's answer>
+Feedback:
+
+Drawing, groups D and E (one image attached: the participant's drawing):
+<group prompt>
+
+This participant is now doing a figural task instead: they were shown an abstract figure and drew on it to turn it into a picture. The attached image is their drawing. Give feedback on the drawing in the same style.
+Provide one short feedback message for the participant.
+
+
+Provide one short feedback message for the participant.
+
+Task: <e.g. Figural Task 1>
+Feedback:
+
+Drawing, group C (two images attached: first the blank figure, then the drawing):
+<group prompt>
+
+This participant is now doing a figural task instead: they were shown an abstract figure and drew on it to turn it into a picture. The first image is the original figure; the second image is their drawing on top of it. Base your feedback on what they actually added to the figure, in the same style.
+
+Provide one short feedback message for the participant.
+
+Task: <e.g. Figural Task 1>
+Feedback:
+
+6. MEANINGFUL-ANSWER CHECK (groups B-E, before scoring or feedback)
+----------------------------------------
+Step 1, simple rules (all groups, including A). The answer does NOT count if:
+- it has fewer than 2 letters (blank, numbers only, symbols)
+- it is a filler word: abc, asdf, blah, don't know, dont know, i don't know, i dont know, idk, lol, n/a, na, no idea, none, nothing, qwerty, something, stuff, test, whatever
+- it is one or two letters repeated, 4+ letters long ("aaaa", "hahaha")
+- every word is 4+ letters along one keyboard row (qwertyuiop, asdfghjkl, zxcvbnm), forwards or backwards ("asdfgh", "lkjh")
+- every word is 4+ letters with no vowels a/e/i/o/u/y ("sdfg hjkl")
+Step 2, AI check (groups B-E only). Prompt:
+A participant in a creativity study was asked to list uses for an everyday object.
+Object / task: <prompt, e.g. Brick. Think of as many uses as you can.>
+Their answer: <participant's answer>
+
+Is the answer a genuine attempt at a use for the object? Unusual, silly, impractical or very short ideas are genuine attempts. It is NOT genuine only if it is gibberish, random characters, empty filler (like "idk" or "nothing"), or has nothing to do with using the object.
+Reply with exactly one word: OK or NONSENSE.
+If the reply contains NONSENSE, the answer gets no score/feedback and does not count. If the AI call fails, the answer counts.
+Message shown to the participant: This doesn't look like a real use for the object, so there is no feedback for it. Please change it to a meaningful answer and click “Get Feedback” again.
+Saved in the data's feedback column: [flagged: not a meaningful answer]
+
+7. SAFETY FILTER ON GENERATED FEEDBACK (groups C-E)
+----------------------------------------
+Feedback is blocked if it matches this keyword pattern (case-insensitive, whole words):
+\b(weapons?|guns?|knife|knives|stab|stabs|stabbed|stabbing|kill\w*|murder\w*|bombs?|poison\w*|strangl\w*|suffocat\w*|explosives?|assault\w*|suicid\w*|bludgeon\w*|arson)\b
+or if OpenAI moderation flags it. A blocked reply is regenerated once; if it is blocked again, this fixed message is shown instead:
+- Group C (informative): Try imagining the object in a completely different setting, like a museum, a garden, or a game.
+- Group D (positive): Thanks for sharing! Keep exploring safe, imaginative possibilities. 🌟
+- Group E (negative): That is not acceptable here. Come up with a safe, genuinely original idea instead.

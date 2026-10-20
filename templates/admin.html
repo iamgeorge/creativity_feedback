@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Study Admin</title>
+<link rel="stylesheet" href="/static/css/site.css">
+<style>
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 20px 64px; }
+  .topbar { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 26px; }
+  .topbar p { color: var(--text-2); }
+  .panel { padding: 24px; margin-top: 20px; }
+  .panel h2 { font-size: 20px; margin-bottom: 6px; }
+  .panel > p { color: var(--text-2); max-width: 46rem; }
+  .form-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; margin-top: 16px; }
+  .form-row label { display: grid; gap: 6px; font-weight: 700; font-size: 15px; }
+  .form-row select.field, .form-row input.field { width: auto; min-width: 150px; }
+  select.field { background-color: var(--surface); color: var(--text); }
+  .notice { margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-control); background: var(--accent-soft); border-left: 4px solid var(--accent); overflow-wrap: anywhere; }
+  .notice.is-error { background: var(--danger-soft); border-left-color: var(--danger); color: var(--danger); }
+  .notice:empty { display: none; }
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 16px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--text-2); font-size: 14px; }
+  td.id { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .btn-danger { color: var(--danger); border-color: var(--danger); }
+  .muted { color: var(--text-2); }
+  .new-title { font-size: 17px; margin-top: 18px; }
+  .password { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 17px; letter-spacing: 0.04em; }
+  .btn-small { min-height: 34px; padding: 4px 10px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="topbar">
+      <h1>Study Admin</h1>
+      <p>Signed in as <strong id="me">…</strong> · <a href="/dashboard">Open the data dashboard</a></p>
+    </div>
+
+    <section class="panel" aria-labelledby="idsTitle">
+      <h2 id="idsTitle">Participant IDs</h2>
+      <p>Create an ID and password for each participant and send both to them. Only IDs created here can start the tasks. The first letter sets the group; odd numbers start with the verbal tasks and even numbers with the figural tasks.</p>
+      <form class="form-row" id="createForm">
+        <label>Group
+          <select class="field" id="group" name="group">
+            <option value="auto">Balance automatically</option>
+            <option value="A">A · Control</option>
+            <option value="B">B · Evaluative (score)</option>
+            <option value="C">C · Informative</option>
+            <option value="D">D · Positive</option>
+            <option value="E">E · Negative</option>
+          </select>
+        </label>
+        <label>How many
+          <input class="field" type="number" id="count" name="count" min="1" max="100" value="1" inputmode="numeric" autocomplete="off">
+        </label>
+        <button class="btn btn-primary" type="submit">Create IDs</button>
+      </form>
+      <div class="notice" id="createNotice" role="status"></div>
+      <div id="newLogins" hidden>
+        <h3 class="new-title">New logins: copy or download them now</h3>
+        <p class="muted">Passwords are stored scrambled and can't be shown again. If one gets lost, use &ldquo;New password&rdquo; in the list below.</p>
+        <div class="table-wrap">
+          <table><thead><tr><th>ID</th><th>Password</th><th>Group</th></tr></thead><tbody id="newRows"></tbody></table>
+        </div>
+        <div class="form-row"><button class="btn" type="button" id="downloadNew">Download as CSV</button></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Group</th><th>Created by</th><th>Created</th><th>Status</th><th>Password</th></tr></thead>
+          <tbody id="idRows"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="noIds" style="margin-top:12px;">No IDs created yet. Until the first one is created, any ID starting with A to E is accepted.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="peopleTitle">
+      <h2 id="peopleTitle">Researcher accounts</h2>
+      <p>Everyone listed here can use this page and the data dashboard. Accounts from the server&rsquo;s .env file can only be changed there.</p>
+      <div class="table-wrap">
+        <table><thead><tr><th>Username</th><th>Added by</th><th>Added</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="peopleRows"></tbody></table>
+      </div>
+      <form class="form-row" id="addPersonForm">
+        <label>Username
+          <input class="field" id="newUsername" name="username" autocomplete="off" spellcheck="false" autocapitalize="none" required>
+        </label>
+        <label>Password (at least 8 characters)
+          <input class="field" id="newPassword" name="new-password" type="text" autocomplete="new-password" spellcheck="false" minlength="8" required>
+        </label>
+        <button class="btn btn-primary" type="submit">Add Account</button>
+      </form>
+      <div class="notice" id="peopleNotice" role="status"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="dataTitle">
+      <h2 id="dataTitle">Weekly download and delete</h2>
+      <p>Each week, download everything (all answers and drawings), check that the ZIP file opens, and then delete the data from the server. Deleting is only possible within 30 minutes of a download that includes every saved answer. The list of IDs above is kept.</p>
+      <p style="margin-top:12px;"><strong>Last full download:</strong> <span id="lastExport">…</span></p>
+      <div class="form-row">
+        <a class="btn btn-primary" href="/export/all.zip" id="downloadAll">Download Everything (.zip)</a>
+        <button class="btn btn-danger" type="button" id="deleteBtn">Delete Data From Server…</button>
+      </div>
+      <div class="notice" id="dataNotice" role="status"></div>
+    </section>
+  </main>
+
+<script>
+const GROUP_NAMES = { control: "A · Control", evaluative: "B · Evaluative", informative: "C · Informative", positive: "D · Positive", negative: "E · Negative" };
+const fmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+const $ = (id) => document.getElementById(id);
+
+function cell(tr, text, className) {
+  const td = document.createElement("td");
+  td.textContent = text;
+  if (className) td.className = className;
+  tr.appendChild(td);
+  return td;
+}
+
+let newLogins = [];
+function showNewLogins(rows) {
+  newLogins = rows;
+  const body = $("newRows");
+  body.textContent = "";
+  rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    cell(tr, row.user_id, "id");
+    cell(tr, row.password, "password");
+    cell(tr, GROUP_NAMES[row.group] || row.group || "");
+    body.appendChild(tr);
+  });
+  $("newLogins").hidden = rows.length === 0;
+}
+
+$("downloadNew").addEventListener("click", () => {
+  const lines = ["participant_id,password,group", ...newLogins.map((r) => `${r.user_id},${r.password},${r.group || ""}`)];
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/csv" }));
+  link.download = `participant-logins-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+});
+
+function showNotice(el, text, isError) {
+  el.textContent = text;
+  el.classList.toggle("is-error", !!isError);
+}
+
+async function refresh() {
+  const res = await fetch("/api/admin/state", { cache: "no-store" });
+  const state = await res.json();
+  $("me").textContent = state.me;
+
+  const rows = $("idRows");
+  rows.textContent = "";
+  [...state.ids].reverse().forEach((row) => {
+    const tr = document.createElement("tr");
+    const cells = [row.user_id, GROUP_NAMES[row.group] || row.group, row.created_by, fmt.format(new Date(row.created_at))];
+    cells.forEach((text, i) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (i === 0) td.className = "id";
+      tr.appendChild(td);
+    });
+    const status = document.createElement("td");
+    if (row.has_data) {
+      const link = document.createElement("a");
+      link.href = `/dashboard?user=${encodeURIComponent(row.user_id)}`;
+      link.textContent = "Has data (view)";
+      status.appendChild(link);
+    } else {
+      status.textContent = "Not started";
+      status.className = "muted";
+    }
+    tr.appendChild(status);
+    const pw = document.createElement("td");
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "btn btn-small";
+    reset.textContent = row.has_password ? "New password" : "Add password";
+    reset.setAttribute("aria-label", `${reset.textContent} for ${row.user_id}`);
+    reset.addEventListener("click", async () => {
+      if (!confirm(`Give ${row.user_id} a new password? The old one will stop working.`)) return;
+      const res = await fetch(`/api/admin/ids/${encodeURIComponent(row.user_id)}/reset-password`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { showNotice($("createNotice"), data.error || "Could not change the password.", true); return; }
+      showNotice($("createNotice"), `New password for ${data.user_id}. Send it to the participant.`);
+      showNewLogins([{ user_id: data.user_id, password: data.password, group: row.group }]);
+      refresh();
+    });
+    pw.appendChild(reset);
+    tr.appendChild(pw);
+    rows.appendChild(tr);
+  });
+
+  const people = $("peopleRows");
+  people.textContent = "";
+  state.researchers.forEach((r) => {
+    const tr = document.createElement("tr");
+    cell(tr, r.username + (r.username === state.me ? " (you)" : ""), "id");
+    cell(tr, r.source === ".env" ? "server .env file" : r.created_by);
+    cell(tr, r.created_at ? fmt.format(new Date(r.created_at)) : "");
+    const actions = document.createElement("td");
+    if (r.source !== ".env" && r.username !== state.me) {
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn btn-small btn-danger";
+      remove.textContent = "Remove";
+      remove.setAttribute("aria-label", `Remove ${r.username}`);
+      remove.addEventListener("click", async () => {
+        if (!confirm(`Remove the account "${r.username}"? They will no longer be able to sign in.`)) return;
+        const res = await fetch(`/api/admin/researchers/${encodeURIComponent(r.username)}`, { method: "DELETE" });
+        const data = await res.json();
+        showNotice($("peopleNotice"), res.ok ? `Removed ${r.username}.` : (data.error || "Could not remove."), !res.ok);
+        refresh();
+      });
+      actions.appendChild(remove);
+    }
+    tr.appendChild(actions);
+    people.appendChild(tr);
+  });
+  $("noIds").style.display = state.ids.length ? "none" : "";
+
+  const exported = state.data.last_export;
+  $("lastExport").textContent = exported ? `${fmt.format(new Date(exported.time))} by ${exported.by}` : "never";
+  $("deleteBtn").dataset.reason = state.data.can_delete ? "" : state.data.reason;
+}
+
+$("createForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const res = await fetch("/api/admin/ids", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ group: $("group").value, count: Number($("count").value) })
+  });
+  const data = await res.json();
+  if (!res.ok) { showNotice($("createNotice"), data.error || "Could not create IDs.", true); return; }
+  showNotice($("createNotice"), `Created ${data.created.length} login${data.created.length === 1 ? "" : "s"}. Copy or download the passwords below now.`);
+  showNewLogins(data.created);
+  refresh();
+});
+
+// The data may change while this page is open, so re-check before deleting.
+$("addPersonForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const res = await fetch("/api/admin/researchers", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: $("newUsername").value, password: $("newPassword").value })
+  });
+  const data = await res.json();
+  if (!res.ok) { showNotice($("peopleNotice"), data.error || "Could not add the account.", true); return; }
+  showNotice($("peopleNotice"), `Added ${data.username}. Send them the password you chose.`);
+  $("addPersonForm").reset();
+  refresh();
+});
+
+$("downloadAll").addEventListener("click", () => setTimeout(refresh, 2000));
+$("deleteBtn").addEventListener("click", async () => {
+  await refresh();
+  if ($("deleteBtn").dataset.reason) { showNotice($("dataNotice"), $("deleteBtn").dataset.reason, true); return; }
+  const typed = prompt("This permanently deletes all answers and drawings from the server.\nMake sure the ZIP you just downloaded opens.\n\nType DELETE to confirm.");
+  if (typed !== "DELETE") { showNotice($("dataNotice"), "Nothing was deleted."); return; }
+  const res = await fetch("/api/admin/delete-data", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: "DELETE" })
+  });
+  const data = await res.json();
+  showNotice($("dataNotice"), res.ok ? "All response data was deleted from the server." : (data.error || "Delete failed."), !res.ok);
+  refresh();
+});
+
+refresh();
+</script>
+</body>
+</html>

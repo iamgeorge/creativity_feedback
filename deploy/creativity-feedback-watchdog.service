@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart the creativity feedback site if it stops answering
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'curl -fsS --max-time 20 http://127.0.0.1:5555/healthz >/dev/null || systemctl restart creativity-feedback.service'

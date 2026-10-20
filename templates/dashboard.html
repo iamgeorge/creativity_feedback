@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Creativity Feedback — Participant Explorer</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --border:         rgba(11,11,11,0.10);
+    --good:           #0ca30c;
+    --accent:         #2a78d6;
+    --series-control:     #2a78d6;
+    --series-evaluative:  #eb6834;
+    --series-informative: #1baf7a;
+    --series-positive:    #eda100;
+    --series-negative:    #e87ba4;
+    --hover-wash:     rgba(11,11,11,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --border:         rgba(255,255,255,0.10);
+      --good:           #0ca30c;
+      --accent:         #3987e5;
+      --series-control:     #3987e5;
+      --series-evaluative:  #d95926;
+      --series-informative: #199e70;
+      --series-positive:    #c98500;
+      --series-negative:    #d55181;
+      --hover-wash:     rgba(255,255,255,0.06);
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --border:         rgba(255,255,255,0.10);
+    --good:           #0ca30c;
+    --accent:         #3987e5;
+    --series-control:     #3987e5;
+    --series-evaluative:  #d95926;
+    --series-informative: #199e70;
+    --series-positive:    #c98500;
+    --series-negative:    #d55181;
+    --hover-wash:     rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--page-plane); color:var(--text-primary); font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width:1280px; margin:0 auto; padding:20px 16px 60px; }
+
+  .header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .header h1 { font-size:21px; margin:0; font-weight:700; }
+  .header .sub { color:var(--text-secondary); font-size:13px; margin-top:4px; }
+  .live { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary); }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--good); box-shadow:0 0 0 0 rgba(12,163,12,0.5); animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0% { box-shadow:0 0 0 0 rgba(12,163,12,0.45); }
+    70% { box-shadow:0 0 0 6px rgba(12,163,12,0); }
+    100% { box-shadow:0 0 0 0 rgba(12,163,12,0); }
+  }
+
+  .card { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .card h2 { font-size:14px; margin:0 0 10px; font-weight:600; }
+
+  .layout { display:grid; grid-template-columns:380px 1fr; gap:16px; align-items:start; }
+  @media (max-width: 900px) { .layout { grid-template-columns:1fr; } }
+
+  .toolbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .toolbar input[type="search"] {
+    flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    background:var(--page-plane); color:var(--text-primary); font-size:13px;
+  }
+  select#groupFilter { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--page-plane); color:var(--text-primary); font-size:13px; }
+
+  .stat-strip { display:flex; gap:18px; margin-bottom:12px; flex-wrap:wrap; }
+  .stat-strip .stat { font-size:12px; color:var(--text-secondary); }
+  .stat-strip .stat b { font-size:16px; color:var(--text-primary); display:block; font-weight:600; }
+
+  .participant-list { max-height:74vh; overflow-y:auto; border-top:1px solid var(--grid); }
+  .participant-row {
+    display:flex; align-items:center; gap:10px; padding:10px 8px; border-bottom:1px solid var(--grid);
+    cursor:pointer; border-radius:8px;
+  }
+  .participant-row:hover { background:var(--hover-wash); }
+  .participant-row.selected { background:var(--hover-wash); box-shadow: inset 3px 0 0 var(--accent); }
+  .swatch { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+  .participant-row .pinfo { flex:1; min-width:0; }
+  .participant-row .pid { font-weight:600; font-size:14px; }
+  .participant-row .pmeta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .participant-row .pcount { font-size:12px; color:var(--text-secondary); text-align:right; white-space:nowrap; }
+
+  .empty-state { color:var(--text-muted); padding:24px 8px; text-align:center; font-size:13px; }
+
+  /* --- Detail panel --- */
+  .detail-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .detail-header .title { display:flex; align-items:center; gap:10px; }
+  .detail-header .title h2 { font-size:20px; margin:0; }
+  .detail-meta { display:flex; gap:20px; flex-wrap:wrap; }
+  .detail-meta .m { font-size:12px; color:var(--text-secondary); }
+  .detail-meta .m b { display:block; font-size:15px; color:var(--text-primary); font-weight:600; margin-top:2px; }
+
+  .task-card { border:1px solid var(--grid); border-radius:10px; padding:14px; margin-top:12px; }
+  .task-card .task-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .task-card .task-title { font-weight:600; font-size:14px; }
+  .task-card .task-time { font-size:12px; color:var(--text-muted); }
+  .task-card .task-time b { color:var(--text-secondary); font-weight:600; }
+
+  .answer-row { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--grid); align-items:flex-start; }
+  .answer-row:first-of-type { border-top:none; }
+  .answer-idx { flex:0 0 22px; color:var(--text-muted); font-size:12px; padding-top:2px; }
+  .answer-text { flex:1; min-width:0; }
+  .answer-feedback { font-size:12px; color:var(--text-secondary); margin-top:4px; background:var(--page-plane); border-radius:6px; padding:6px 8px; }
+  .answer-time { flex:0 0 auto; font-size:11px; color:var(--text-muted); font-variant-numeric:tabular-nums; white-space:nowrap; padding-top:2px; }
+
+  .mood-pair { display:flex; gap:16px; margin-top:10px; flex-wrap:wrap; }
+  .mood-pill { display:flex; align-items:center; gap:8px; background:var(--page-plane); border-radius:8px; padding:6px 10px; font-size:12px; color:var(--text-secondary); }
+  .mood-pill b { color:var(--text-primary); font-size:14px; }
+  .mood-face { width:24px; height:24px; flex:0 0 auto; }
+
+  .no-answers { font-size:12px; color:var(--text-muted); font-style:italic; padding:6px 0; }
+  .answer-score { display:inline-block; font-size:11px; font-weight:600; color:var(--accent); background:var(--page-plane); border-radius:5px; padding:2px 6px; margin-left:8px; }
+  .placeholder { color:var(--text-muted); text-align:center; padding:60px 16px; font-size:14px; }
+  .answer-drawing { display:block; margin-top:6px; max-width:min(420px, 100%); height:auto; border:1px solid var(--grid); border-radius:8px; background:#fff; }
+  .downloads { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:12px; color:var(--text-secondary); margin-bottom:16px; }
+  .participant-download { align-self:center; font-size:12px; color:var(--accent); border:1px solid var(--border); border-radius:6px; padding:4px 8px; text-decoration:none; }
+  .downloads a { color:var(--accent); border:1px solid var(--border); border-radius:6px; padding:3px 8px; text-decoration:none; background:var(--surface-1); }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="wrap">
+
+    <div class="header">
+      <div>
+        <h1>Participant Explorer</h1>
+        <div class="sub"><a href="/admin" style="color:var(--accent)">Admin: participant IDs, weekly download and delete</a></div>
+        <div class="sub" id="lastUpdated">Loading…</div>
+      </div>
+      <div class="live"><span class="live-dot"></span><span id="liveStatus">Live — refreshing every 5s</span></div>
+    </div>
+
+    <div class="downloads">
+      <span>Download raw CSV:</span>
+      <a href="/export/control.csv">Control (A)</a>
+      <a href="/export/evaluative.csv">Evaluative (B)</a>
+      <a href="/export/informative.csv">Informative (C)</a>
+      <a href="/export/positive.csv">Positive (D)</a>
+      <a href="/export/negative.csv">Negative (E)</a>
+      <a href="/export/all.zip">Everything incl. drawings (.zip)</a>
+    </div>
+
+    <div class="layout">
+      <div class="card">
+        <h2>Participants</h2>
+        <div class="toolbar">
+          <input type="search" id="searchBox" placeholder="Search participant ID…" />
+          <select id="groupFilter">
+            <option value="">All groups</option>
+            <option value="control">Control (A)</option>
+            <option value="evaluative">Evaluative (B)</option>
+            <option value="informative">Informative (C)</option>
+            <option value="positive">Positive (D)</option>
+            <option value="negative">Negative (E)</option>
+          </select>
+        </div>
+        <div class="stat-strip">
+          <div class="stat"><b id="statCount">0</b>Participants</div>
+          <div class="stat"><b id="statEvents">0</b>Total events</div>
+        </div>
+        <div class="participant-list" id="participantList"></div>
+      </div>
+
+      <div class="card" id="detailCard">
+        <div class="placeholder" id="detailPlaceholder">Select a participant on the left to see their full response history.</div>
+        <div id="detailContent" style="display:none;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const GROUP_LABEL = {
+  control: "Control (A)",
+  evaluative: "Evaluative (B)",
+  informative: "Informative (C)",
+  positive: "Positive (D)",
+  negative: "Negative (E)"
+};
+// The pre-task check-in is logged under this question; it isn't one of the 10 tasks.
+const BASELINE_QUESTION = "Baseline (before starting)";
+const TOTAL_TASKS = 10;
+// Check-ins (mood ratings) are their own blocks, not tasks.
+const isCheckin = (task) => task.kind === "checkin";
+const cssVar = (name) => getComputedStyle(document.querySelector(".viz-root")).getPropertyValue(name).trim();
+const seriesColor = (g) => cssVar(`--series-${g}`);
+
+let latestData = null;
+// ?user=C2 opens that participant directly (the URL updates as you click).
+let selectedUserId = new URLSearchParams(location.search).get("user");
+
+function selectUser(userId){
+  selectedUserId = userId;
+  history.replaceState(null, "", `?user=${encodeURIComponent(userId)}`);
+  renderAll();
+}
+
+function fmtTime(iso){
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+  } catch(e) { return iso; }
+}
+
+function fmtDuration(seconds){
+  if (seconds === null || seconds === undefined) return "—";
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60), s = seconds % 60;
+  return `${m}m ${s}s`;
+}
+
+function moodFaceSvg(level){
+  const lvl = Math.max(1, Math.min(5, parseInt(level, 10) || 3));
+  const mouths = [
+    "M 20 40 Q 28 30 36 40",
+    "M 20 38 Q 28 32 36 38",
+    "M 20 36 L 36 36",
+    "M 20 34 Q 28 40 36 34",
+    "M 18 32 Q 28 44 38 32"
+  ];
+  return `<svg class="mood-face" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="28" cy="28" r="26" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="20" cy="26" r="2" fill="currentColor"/><circle cx="36" cy="26" r="2" fill="currentColor"/>
+    <path d="${mouths[lvl-1]}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function matchesFilters(p){
+  const groupSel = document.getElementById("groupFilter").value;
+  const search = document.getElementById("searchBox").value.trim().toLowerCase();
+  if (groupSel && p.group !== groupSel) return false;
+  if (search && !p.user_id.toLowerCase().includes(search)) return false;
+  return true;
+}
+
+function renderParticipantList(){
+  const el = document.getElementById("participantList");
+  el.innerHTML = "";
+  if (!latestData) return;
+  const participants = latestData.participants.filter(matchesFilters);
+
+  document.getElementById("statCount").textContent = participants.length;
+  document.getElementById("statEvents").textContent = participants.reduce((a, p) => a + p.total_events, 0);
+
+  if (participants.length === 0) {
+    const div = document.createElement("div");
+    div.className = "empty-state";
+    div.textContent = "No participants match.";
+    el.appendChild(div);
+    return;
+  }
+
+  participants.forEach(p => {
+    const row = document.createElement("div");
+    row.className = "participant-row" + (p.user_id === selectedUserId ? " selected" : "");
+    row.addEventListener("click", () => selectUser(p.user_id));
+
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = seriesColor(p.group);
+    row.appendChild(sw);
+
+    const info = document.createElement("div");
+    info.className = "pinfo";
+    const idEl = document.createElement("div");
+    idEl.className = "pid";
+    idEl.textContent = p.user_id;
+    const meta = document.createElement("div");
+    meta.className = "pmeta";
+    meta.textContent = `${GROUP_LABEL[p.group] || p.group} · last active ${fmtTime(p.last_seen)}`;
+    info.appendChild(idEl);
+    info.appendChild(meta);
+    row.appendChild(info);
+
+    const count = document.createElement("div");
+    count.className = "pcount";
+    count.textContent = `${p.tasks.filter(t => !isCheckin(t)).length}/${TOTAL_TASKS} tasks`;
+    row.appendChild(count);
+
+    el.appendChild(row);
+  });
+}
+
+function renderDetail(){
+  const placeholder = document.getElementById("detailPlaceholder");
+  const content = document.getElementById("detailContent");
+  if (!latestData) return;
+  const p = latestData.participants.find(x => x.user_id === selectedUserId);
+  if (!p) {
+    placeholder.style.display = "block";
+    content.style.display = "none";
+    return;
+  }
+  placeholder.style.display = "none";
+  content.style.display = "block";
+  content.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.className = "detail-header";
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "title";
+  const sw = document.createElement("span");
+  sw.className = "swatch";
+  sw.style.width = "14px"; sw.style.height = "14px";
+  sw.style.background = seriesColor(p.group);
+  const h2 = document.createElement("h2");
+  h2.textContent = p.user_id;
+  titleWrap.appendChild(sw);
+  titleWrap.appendChild(h2);
+  header.appendChild(titleWrap);
+
+  const meta = document.createElement("div");
+  meta.className = "detail-meta";
+  const metaItems = [
+    ["Group", GROUP_LABEL[p.group] || p.group],
+    ["First seen", fmtTime(p.first_seen)],
+    ["Last active", fmtTime(p.last_seen)],
+    ["Total events", p.total_events]
+  ];
+  metaItems.forEach(([label, value]) => {
+    const m = document.createElement("div");
+    m.className = "m";
+    m.textContent = label;
+    const b = document.createElement("b");
+    b.textContent = value;
+    m.appendChild(b);
+    meta.appendChild(m);
+  });
+  const download = document.createElement("a");
+  download.className = "participant-download";
+  download.href = `/export/participant/${encodeURIComponent(p.user_id)}.zip`;
+  download.textContent = "Download this participant's data (.zip)";
+  meta.appendChild(download);
+  header.appendChild(meta);
+  content.appendChild(header);
+
+  if (p.tasks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "no-answers";
+    empty.textContent = "No tasks recorded yet.";
+    content.appendChild(empty);
+    return;
+  }
+
+  let taskNumber = 0;
+  p.tasks.forEach((task) => {
+    const card = document.createElement("div");
+    card.className = "task-card";
+
+    const head = document.createElement("div");
+    head.className = "task-head";
+    const title = document.createElement("div");
+    title.className = "task-title";
+    title.textContent = isCheckin(task)
+      ? (task.question === BASELINE_QUESTION ? "Check-in before starting" : task.question)
+      : `Task ${++taskNumber}: ${task.question || "(untitled)"}`;
+    head.appendChild(title);
+    const time = document.createElement("div");
+    time.className = "task-time";
+    time.innerHTML = `Time spent: <b>${fmtDuration(task.duration_seconds)}</b>`;
+    head.appendChild(time);
+    card.appendChild(head);
+
+    if (isCheckin(task)) {
+      time.remove();
+    } else if (task.answers.length === 0) {
+      const none = document.createElement("div");
+      none.className = "no-answers";
+      none.textContent = "No answers logged.";
+      card.appendChild(none);
+    } else {
+      task.answers.forEach((a, ai) => {
+        const row = document.createElement("div");
+        row.className = "answer-row";
+        const idx = document.createElement("div");
+        idx.className = "answer-idx";
+        idx.textContent = `#${ai + 1}`;
+        row.appendChild(idx);
+
+        const textWrap = document.createElement("div");
+        textWrap.className = "answer-text";
+        const answerLine = document.createElement("div");
+        const answerText = document.createElement("span");
+        const isDrawingFile = (a.type || "").startsWith("drawing") && /^participants\/.+\.png$/.test(a.answer || "");
+        if (isDrawingFile) {
+          answerText.textContent = a.type === "drawing_unsubmitted" ? "Drawing (not submitted, saved when time ran out)" : "Drawing submitted";
+        } else {
+          answerText.textContent = a.answer || "";
+        }
+        answerLine.appendChild(answerText);
+        if (a.score !== null && a.score !== undefined) {
+          const scoreBadge = document.createElement("span");
+          scoreBadge.className = "answer-score";
+          scoreBadge.textContent = `Score: ${a.score}`;
+          answerLine.appendChild(scoreBadge);
+        }
+        textWrap.appendChild(answerLine);
+        if (isDrawingFile) {
+          const link = document.createElement("a");
+          link.href = "/" + a.answer;
+          link.target = "_blank";
+          link.rel = "noopener";
+          const img = document.createElement("img");
+          img.className = "answer-drawing";
+          img.src = "/" + a.answer;
+          img.alt = `${a.type === "drawing_unsubmitted" ? "Unsubmitted drawing" : "Drawing"} for ${task.question || "figural task"}`;
+          img.loading = "lazy";
+          link.appendChild(img);
+          textWrap.appendChild(link);
+        }
+        if (a.feedback) {
+          const fb = document.createElement("div");
+          fb.className = "answer-feedback";
+          fb.textContent = a.feedback;
+          textWrap.appendChild(fb);
+        }
+        row.appendChild(textWrap);
+
+        const t = document.createElement("div");
+        t.className = "answer-time";
+        t.textContent = fmtTime(a.time);
+        row.appendChild(t);
+
+        card.appendChild(row);
+      });
+    }
+
+    if (task.mood_pleasant || task.mood_alert) {
+      const moodPair = document.createElement("div");
+      moodPair.className = "mood-pair";
+      // Values come from participant submissions: insert as text, never as HTML.
+      const addMoodPill = (label, value) => {
+        const pill = document.createElement("div");
+        pill.className = "mood-pill";
+        pill.innerHTML = moodFaceSvg(value);
+        pill.append(`${label} `);
+        const b = document.createElement("b");
+        b.textContent = `${value}/5`;
+        pill.appendChild(b);
+        moodPair.appendChild(pill);
+      };
+      if (task.mood_pleasant) addMoodPill("Pleasantness", task.mood_pleasant);
+      if (task.mood_alert) addMoodPill("Alertness", task.mood_alert);
+      card.appendChild(moodPair);
+    }
+
+    content.appendChild(card);
+  });
+}
+
+function renderAll(){
+  renderParticipantList();
+  renderDetail();
+}
+
+async function fetchData(){
+  try {
+    const res = await fetch("/api/dashboard-data", { cache: "no-store" });
+    if (!res.ok) throw new Error("bad response");
+    const data = await res.json();
+    latestData = data;
+    document.getElementById("lastUpdated").textContent = "Last updated " + fmtTime(data.generated_at);
+    document.getElementById("liveStatus").textContent = "Live — refreshing every 5s";
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    document.getElementById("liveStatus").textContent = "Connection issue — retrying…";
+  }
+}
+
+document.getElementById("searchBox").addEventListener("input", renderParticipantList);
+document.getElementById("groupFilter").addEventListener("change", renderParticipantList);
+
+fetchData();
+setInterval(fetchData, 5000);
+</script>
+</body>
+</html>
